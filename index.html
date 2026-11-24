@@ -21,6 +21,8 @@
     <a href="#leaders" data-p="leaders">القادة</a>
     <a href="#committees" data-p="committees">اللجان</a>
     <a href="#events" data-p="events">الفعاليات</a>
+    <a href="#chat" data-p="chat" id="navChat" hidden>الشات</a>
+    <a href="#points" data-p="points" id="navPoints" hidden>النقاط</a>
     <a href="#admin" data-p="admin" id="navAdmin" hidden>الإدارة</a>
     <a href="#join" data-p="join" id="navJoin" class="cta">دخول / تسجيل</a>
     <a href="#profile" data-p="profile" id="navMe" hidden><span class="dot"></span><span id="navName">حسابي</span></a>
@@ -47,6 +49,17 @@
     </div>
     <div class="cols">
       <div class="card pad">
+        <h2>إعلانات النادي</h2>
+        <ul class="ann" id="annHome"></ul>
+        <details class="add" id="annAdd" hidden>
+          <summary>إعلان جديد</summary>
+          <form id="annForm">
+            <label>نص الإعلان<textarea name="text" required maxlength="600"></textarea></label>
+            <button class="btn">نشر الإعلان</button>
+          </form>
+        </details>
+      </div>
+      <div class="card pad tw-card">
         <h2>آخر تغريدات النادي</h2>
         <div class="tw-wrap">
           <div class="tw-track" id="twTrack" tabindex="0" aria-label="تغريدات النادي"></div>
@@ -62,18 +75,9 @@
           </form>
         </details>
       </div>
-      <div class="card pad">
-        <h2>إعلانات النادي</h2>
-        <ul class="ann" id="annHome"></ul>
-        <details class="add" id="annAdd" hidden>
-          <summary>إعلان جديد</summary>
-          <form id="annForm">
-            <label>نص الإعلان<textarea name="text" required maxlength="600"></textarea></label>
-            <button class="btn">نشر الإعلان</button>
-          </form>
-        </details>
-      </div>
     </div>
+    <div class="stats section" id="statsRow"></div>
+    <div class="card pad"><h2>اللجان: الأعضاء والنقاط</h2><div class="cstats" id="comStats"></div></div>
   </div>
 </section>
 
@@ -117,7 +121,7 @@
 <!-- ============ القادة ============ -->
 <section class="page" data-page="leaders" hidden>
   <div class="wrap">
-    <div class="head"><h1>قادة النادي</h1><p>رئاسة النادي وقادة اللجان ونوابهم.</p></div>
+    <div class="head"><h1>هيكلة النادي</h1><p>مستشار النادي ومشرفوه، ورئاسة النادي، ورؤساء اللجان ونوابهم.</p></div>
     <div id="leadersBox"></div>
   </div>
 </section>
@@ -187,7 +191,7 @@
           <label>حساب X <small>اختياري</small><input name="x" class="ltr" placeholder="@username"></label>
           <label>LinkedIn <small>اختياري</small><input name="linkedin" class="ltr" placeholder="linkedin.com/in/..."></label>
         </div>
-        <p class="note">الأدوار القيادية (نائب الرئيس، قائد، نائب قائد) تظهر في صفحة القادة بعد اعتماد رئيس النادي.</p>
+        <p class="note">العضو والمستفيد يدخلون مباشرة. الأدوار القيادية (نائب رئيس النادي، رئيس لجنة، نائب رئيس لجنة) تحتاج اعتماد رئيس النادي. والمستفيد يحضر الفعاليات بدون لجنة ولا نقاط.</p>
         <p class="err" id="upErr" role="alert"></p>
         <button class="btn gold">إنشاء الحساب</button>
       </form>
@@ -205,7 +209,7 @@
 <!-- ============ حسابي ============ -->
 <section class="page" data-page="profile" hidden>
   <div class="narrow" style="max-width:640px">
-    <div class="head"><h1>حسابي</h1><p id="meLine"></p></div>
+    <div class="head"><h1>حسابي</h1><p id="meLine"></p><p class="mypts" id="myPts" hidden></p></div>
     <div class="card pad">
       <form id="meForm">
         <label>الاسم<input name="name" required maxlength="60"></label>
@@ -225,25 +229,56 @@
   </div>
 </section>
 
+<!-- ============ الشات العام ============ -->
+<section class="page" data-page="chat" hidden>
+  <div class="narrow">
+    <div class="head"><h1>الشات العام</h1><p>مكان لكل أعضاء النادي يسولفون ويتواصلون، خلك محترم 🤝</p></div>
+    <div class="card chat">
+      <div class="chat-box" id="chatBox" aria-live="polite"></div>
+      <form id="chatForm" class="chat-f">
+        <textarea name="text" required maxlength="500" rows="1" placeholder="اكتب رسالتك…" aria-label="رسالتك"></textarea>
+        <button class="btn">إرسال</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ============ تسجيل النقاط ============ -->
+<section class="page" data-page="points" hidden>
+  <div class="wrap">
+    <div class="head"><h1>تسجيل النقاط</h1><p>لفريق النقاط: رئيس النادي ونوابه، ورئيسا لجنة الموارد البشرية ونائباها.</p></div>
+    <div class="cols">
+      <div class="card pad">
+        <h2>نقاط جديدة</h2>
+        <form id="ptForm">
+          <fieldset class="seg"><legend>لمن؟</legend>
+            <label><input type="radio" name="kind" value="member" checked> عضو</label>
+            <label><input type="radio" name="kind" value="committee"> لجنة كاملة</label>
+          </fieldset>
+          <label id="ptMemberWrap">العضو<select name="member" id="ptMember"></select></label>
+          <label id="ptComWrap" hidden>اللجنة<select name="committee" id="ptCom"></select></label>
+          <div class="row2">
+            <label>النقاط <small>بالسالب للخصم</small><input name="amount" type="number" min="-100" max="100" step="1" required class="ltr" value="1"></label>
+            <label>السبب<input name="reason" required maxlength="80" placeholder="مثال: تنظيم فعالية"></label>
+          </div>
+          <p class="note">نقاط العضو تُحسب له ولجنته معًا.</p>
+          <button class="btn gold">تسجيل النقاط</button>
+        </form>
+      </div>
+      <div class="card pad">
+        <h2>الأعلى نقاطًا</h2>
+        <ul class="names" id="ptBoard"></ul>
+      </div>
+    </div>
+    <div class="card pad section"><h2>سجل النقاط</h2><ul class="names" id="ptLog"></ul></div>
+  </div>
+</section>
+
 <!-- ============ الإدارة ============ -->
 <section class="page" data-page="admin" hidden>
   <div class="wrap">
     <div class="head"><h1>لوحة الإدارة</h1><p>اعتماد طلبات القادة وإدارة أدوار الأعضاء ولجانهم.</p></div>
     <div class="card pad"><h2>طلبات بانتظار الاعتماد <span class="badge wait" id="pendN">٠</span></h2><div id="pendBox"></div></div>
-    <div class="card pad section"><h2>تسجيل النقاط</h2>
-      <form id="ptForm">
-        <div class="row2">
-          <label>اللجنة<select name="committee" id="ptCom" required></select></label>
-        </div>
-        <div class="row2">
-          <label>النقاط <small>اكتب رقمًا بالسالب للخصم</small><input name="amount" type="number" min="-100" max="100" step="1" required class="ltr" value="1"></label>
-          <label>السبب<input name="reason" required maxlength="80" placeholder="مثال: تنظيم فعالية"></label>
-        </div>
-        <button class="btn gold">تسجيل النقاط</button>
-      </form>
-      <p class="sub-t" style="margin-top:18px">سجل النقاط</p>
-      <ul class="names" id="ptLog"></ul>
-    </div>
     <div class="card pad section"><h2>كل الأعضاء <span class="badge" id="allN">٠</span></h2>
       <input id="search" placeholder="ابحث بالاسم…" style="margin-bottom:10px">
       <div class="scroll"><table class="tbl"><thead><tr><th>الاسم</th><th>الدور</th><th>اللجنة</th><th>الحالة</th><th></th></tr></thead><tbody id="allBox"></tbody></table></div>

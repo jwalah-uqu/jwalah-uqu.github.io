@@ -11,18 +11,20 @@ const COMMITTEES = [
   { id: 'pr',      name: 'لجنة العلاقات العامة' },
   { id: 'media',   name: 'قسم الإعلام والتصميم' },
 ];
-// الهيكل: رئيس واحد + ٣ نواب، ولكل لجنة قائدان ونائبان (للطلاب، ومثلهم للطالبات)
+// الهيكل: رئيس النادي + ٣ نواب، ولكل لجنة رئيسان ونائبان (طلاب وطالبات معًا)
 const LIMITS = { president: 1, vp: 3, leader: 2, deputy: 2 };
 const COLLEGES = ['كلية الحاسبات', 'كلية الهندسة والعمارة الإسلامية', 'كلية العلوم التطبيقية', 'كلية الطب', 'كلية طب الأسنان', 'كلية الصيدلة', 'كلية العلوم الطبية التطبيقية', 'كلية التمريض', 'كلية الصحة العامة والمعلوماتية الصحية', 'كلية إدارة الأعمال', 'كلية الشريعة والدراسات الإسلامية', 'كلية الدعوة وأصول الدين', 'كلية اللغة العربية وآدابها', 'كلية التربية', 'كلية العلوم الاجتماعية'];
-const ROLES = { president: 'رئيس النادي', vp: 'نائب الرئيس', leader: 'قائد لجنة', deputy: 'نائب قائد لجنة', member: 'عضو' };
-const SIGNUP_ROLES = ['member', 'deputy', 'leader', 'vp'];
+const ROLES = { president: 'رئيس النادي', vp: 'نائب الرئيس', leader: 'رئيس لجنة', deputy: 'نائب رئيس لجنة', member: 'عضو', beneficiary: 'مستفيد' };
+const SIGNUP_ROLES = ['member', 'beneficiary', 'deputy', 'leader', 'vp'];
+const NO_COMMITTEE = ['president', 'vp', 'beneficiary'];
+const AUTO_APPROVED = ['member', 'beneficiary'];
 const LEAD = ['president', 'vp', 'leader', 'deputy'];
 const ADMIN = ['president', 'vp'];
 const GENDERS = { m: 'طالب', f: 'طالبة' };
-const ROLES_F = { president: 'رئيسة النادي', vp: 'نائبة الرئيس', leader: 'قائدة لجنة', deputy: 'نائبة قائدة لجنة', member: 'عضوة' };
+const ROLES_F = { president: 'رئيسة النادي', vp: 'نائبة الرئيس', leader: 'رئيسة لجنة', deputy: 'نائبة رئيس لجنة', member: 'عضوة', beneficiary: 'مستفيدة' };
 const roleName = u => (u.gender === 'f' ? ROLES_F : ROLES)[u.role] || '';
 const GROUPS = { m: 'الطلاب', f: 'الطالبات' };
-const ROLE_ORDER = { president: 0, vp: 1, leader: 2, deputy: 3, member: 4 };
+const ROLE_ORDER = { president: 0, vp: 1, leader: 2, deputy: 3, member: 4, beneficiary: 5 };
 
 // ===================== أدوات =====================
 const $ = s => document.querySelector(s);
@@ -30,9 +32,19 @@ const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const ar = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
 const cname = id => COMMITTEES.find(c => c.id === id)?.name || '';
 const initial = n => esc((n || '؟').trim().charAt(0));
+const fmtTime = t => { try { const d = new Date(t); return d.toLocaleDateString('ar-SA-u-ca-gregory', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('ar-SA', { hour: 'numeric', minute: '2-digit' }); } catch { return ''; } };
 const fmtDate = t => { try { return new Date(t).toLocaleDateString('ar-SA', { day: 'numeric', month: 'long' }); } catch { return ''; } };
 const isLead = u => !!u && u.approved && LEAD.includes(u.role);
 const isAdmin = u => !!u && u.approved && ADMIN.includes(u.role);
+// فريق تسجيل النقاط: الرئيس ونوابه + رئيسا لجنة الموارد البشرية ونائباها
+const isPointsTeam = u => isAdmin(u) || (!!u && u.approved && u.committee === 'hr' && ['leader', 'deputy'].includes(u.role));
+// مستشار النادي ومشرفوه
+const STAFF = [
+  { name: 'الدكتور عبدالرحمن مدخلي', title: 'مستشار النادي' },
+  { name: 'الأستاذ أحمد حبيب الله', title: 'مشرف النادي' },
+  { name: 'الأستاذة هنيدة الهاشمي', title: 'مشرفة النادي' },
+];
+const memberPoints = (pts, uid) => pts.filter(p => p.uid === uid).reduce((s, p) => s + (+p.amount || 0), 0);
 
 function xUrl(v) {
   v = (v || '').trim(); if (!v) return '';
@@ -66,7 +78,7 @@ async function busy(btn, fn) { btn.disabled = true; try { return await fn(); } f
 
 // ===================== طبقة البيانات: تجريبي =====================
 function DemoBackend() {
-  const KEY = 'jwalah-demo-v4', SKEY = 'jwalah-demo-session';
+  const KEY = 'jwalah-demo-v5', SKEY = 'jwalah-demo-session';
   const H123 = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
   const now = Date.now(), day = 864e5;
   const P = (uid, name, role, committee, extra = {}) => ({ uid, name, role, committee, email: uid + '@demo.sa', pw: H123, approved: true, public: role !== 'member', gender: 'm', x: '', linkedin: '', major: '', createdAt: now, ...extra });
@@ -85,6 +97,7 @@ function DemoBackend() {
       P('fl2', 'سارة الغامدي', 'leader', 'quality', { gender: 'f' }), P('fm1', 'نورة الزهراني', 'member', 'quality', { gender: 'f' }),
       P('fm2', 'جود الشهري', 'member', 'quality', { gender: 'f' }), P('fl3', 'هيا القحطاني', 'leader', 'media', { gender: 'f' }),
       P('fm3', 'رهف المالكي', 'member', 'media', { gender: 'f' }),
+      P('b1', 'عبدالعزيز السفياني', 'beneficiary', ''), P('b2', 'شهد الحازمي', 'beneficiary', '', { gender: 'f' }),
     ],
     ann: [
       { id: 'a1', committee: 'general', text: 'فتح باب التسجيل في معسكرات الخدمة العامة، سجّل من حسابك وتابع لجنتك.', authorUid: 'president', authorName: 'عبدالله الحربي', createdAt: now - day },
@@ -94,11 +107,16 @@ function DemoBackend() {
     ],
     points: [
       { id: 'p1', committee: 'media', amount: 2, reason: 'تغطية معسكر الخدمة العامة', by: 'عبدالله الحربي', createdAt: now - day },
+      { id: 'p3', kind: 'member', uid: 'm4', name: 'سلطان المطيري', committee: 'media', amount: 3, reason: 'تصوير فعالية', by: 'نواف الثبيتي', createdAt: now },
+      { id: 'p4', kind: 'member', uid: 'fm1', name: 'نورة الزهراني', committee: 'quality', amount: 2, reason: 'تنظيم ركن', by: 'نواف الثبيتي', createdAt: now },
       { id: 'p2', committee: 'quality', amount: 3, reason: 'تنظيم لقاء الطالبات', by: 'عبدالله الحربي', createdAt: now - day },
     ],
     events: [
       { id: 'e1', title: 'لقاء تعريفي بنادي الجوالة', date: new Date(now + 3 * day).toISOString().slice(0, 10), time: '٧ مساءً', place: 'مقر النادي', audience: 'm', committee: '', desc: 'تعرّف على النادي ولجانه وبرنامج الفصل.', attendees: [], createdAt: now },
       { id: 'e2', title: 'ورشة الإسعافات الأولية', date: new Date(now + 6 * day).toISOString().slice(0, 10), time: '١٠ صباحًا', place: 'قاعة الأنشطة', audience: 'f', committee: 'quality', desc: '', attendees: [], createdAt: now },
+    ],
+    chat: [
+      { id: 'c1', uid: 'president', name: 'عبدالله الحربي', role: 'president', gender: 'm', text: 'حياكم الله في الشات العام لنادي الجوالة 🌿', createdAt: now - 3600e3 },
     ],
     tweets: [
       { id: 't1', url: 'https://x.com/jwalah_uqu', text: 'الجوالة.. شرف الخدمة وروح العطاء 🤍\n#الكشفية_درب_تعلم_لاينتهي', createdAt: now - day },
@@ -109,7 +127,7 @@ function DemoBackend() {
   if (!mem || !mem.users) mem = seed();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(mem)); } catch {} };
   let sess = null; try { sess = sessionStorage.getItem(SKEY); } catch {}
-  let cb = () => {};
+  let cb = () => {}, chatCb = null;
   const strip = u => { const { pw, ...r } = u; return { ...r }; };
   const me = () => mem.users.find(u => u.uid === sess);
   const emit = () => cb(me() ? strip(me()) : null);
@@ -146,8 +164,13 @@ function DemoBackend() {
     async addAnnouncement(a) { need(isLead(me())); mem.ann.push({ id: 'a' + Date.now(), createdAt: Date.now(), ...a }); save(); },
     async deleteAnnouncement(id) { need(isLead(me())); mem.ann = mem.ann.filter(a => a.id !== id); save(); },
     async points() { return mem.points || []; },
-    async addPoints(p) { need(isAdmin(me())); (mem.points ||= []).push({ id: 'p' + Date.now(), createdAt: Date.now(), ...p }); save(); },
-    async deletePoints(id) { need(isAdmin(me())); mem.points = (mem.points || []).filter(p => p.id !== id); save(); },
+    async addPoints(p) { need(isPointsTeam(me())); (mem.points ||= []).push({ id: 'p' + Date.now(), createdAt: Date.now(), ...p }); save(); },
+    async deletePoints(id) { need(isPointsTeam(me())); mem.points = (mem.points || []).filter(p => p.id !== id); save(); },
+    async stats() { const a = mem.users.filter(u => u.approved); const by = {}; COMMITTEES.forEach(c => by[c.id] = a.filter(u => u.committee === c.id && u.role !== 'beneficiary').length); return { members: a.filter(u => u.role !== 'beneficiary').length, beneficiaries: a.filter(u => u.role === 'beneficiary').length, byCommittee: by }; },
+    async saveStats() {},
+    watchChat(cb) { const f = () => cb([...(mem.chat || [])].sort((a, b) => a.createdAt - b.createdAt).slice(-100)); chatCb = f; f(); return () => { chatCb = null; }; },
+    async sendChat(m) { const u = me(); need(u && u.approved); (mem.chat ||= []).push({ id: 'c' + Date.now(), createdAt: Date.now(), ...m }); save(); chatCb?.(); },
+    async deleteChat(id) { mem.chat = (mem.chat || []).filter(c => c.id !== id); save(); chatCb?.(); },
     async events() { return mem.events || []; },
     async addEvent(e) { need(isLead(me())); (mem.events ||= []).push({ id: 'e' + Date.now(), createdAt: Date.now(), attendees: [], ...e }); save(); },
     async deleteEvent(id) { need(isLead(me())); mem.events = mem.events.filter(e => e.id !== id); save(); },
@@ -192,6 +215,11 @@ async function FirebaseBackend(cfg) {
     async addAnnouncement(a) { await annC.add({ ...a, createdAt: Date.now() }); },
     async deleteAnnouncement(id) { await annC.doc(id).delete(); },
     async points() { return docs(await fs.collection('points').get()); },
+    async stats() { const d = await fs.collection('stats').doc('club').get(); return d.exists ? d.data() : null; },
+    async saveStats(st) { await fs.collection('stats').doc('club').set({ ...st, updatedAt: Date.now() }); },
+    watchChat(cb) { return fs.collection('chat').orderBy('createdAt', 'desc').limit(100).onSnapshot(q => cb(docs(q).reverse()), () => cb(null)); },
+    async sendChat(m) { await fs.collection('chat').add({ ...m, createdAt: Date.now() }); },
+    async deleteChat(id) { await fs.collection('chat').doc(id).delete(); },
     async addPoints(p) { await fs.collection('points').add({ ...p, createdAt: Date.now() }); },
     async deletePoints(id) { await fs.collection('points').doc(id).delete(); },
     async events() { return docs(await fs.collection('events').get()); },
@@ -206,7 +234,8 @@ async function FirebaseBackend(cfg) {
 
 // ===================== الحالة والتوجيه =====================
 let api, me = null;
-const PAGES = ['home', 'about', 'leaders', 'committees', 'events', 'join', 'profile', 'admin'];
+const PAGES = ['home', 'about', 'leaders', 'committees', 'events', 'chat', 'points', 'join', 'profile', 'admin'];
+let chatUnsub = null;
 let current = 'home';
 
 function route() {
@@ -216,6 +245,9 @@ function route() {
   if (p === 'join' && me) p = 'profile';
   if (p === 'profile' && !me) p = 'join';
   if (p === 'admin' && !isAdmin(me)) p = me ? 'home' : 'join';
+  if (p === 'points' && !isPointsTeam(me)) p = me ? 'home' : 'join';
+  if (p === 'chat' && !me?.approved) p = me ? 'home' : 'join';
+  if (p !== 'chat' && chatUnsub) { chatUnsub(); chatUnsub = null; }
   const changed = p !== current; current = p;
   document.querySelectorAll('.page').forEach(s => s.hidden = s.dataset.page !== p);
   document.querySelectorAll('#links a').forEach(a => a.classList.toggle('on', a.dataset.p === p));
@@ -225,9 +257,40 @@ function route() {
 
 function paintNav() {
   $('#navJoin').hidden = !!me; $('#navMe').hidden = !me; $('#navAdmin').hidden = !isAdmin(me);
+  $('#navPoints').hidden = !isPointsTeam(me); $('#navChat').hidden = !me?.approved;
   if (me) $('#navName').textContent = (me.name || 'حسابي').split(' ')[0];
   $('#heroCta').hidden = !!me;
   $('#twAdd').hidden = !isLead(me); $('#annAdd').hidden = !isLead(me);
+}
+
+// ===================== الإحصائيات =====================
+// القادة يحسبون الأعداد من قائمة الأعضاء ويحفظونها، والزوار يقرؤونها
+function calcStats(users) {
+  const a = users.filter(u => u.approved), by = {};
+  COMMITTEES.forEach(c => by[c.id] = a.filter(u => u.committee === c.id && u.role !== 'beneficiary').length);
+  return { members: a.filter(u => u.role !== 'beneficiary').length, beneficiaries: a.filter(u => u.role === 'beneficiary').length, byCommittee: by };
+}
+async function syncStats(users) {
+  if (!isLead(me)) return;
+  try { const st = calcStats(users), old = await api.stats(); if (JSON.stringify(old?.byCommittee) !== JSON.stringify(st.byCommittee) || old?.members !== st.members || old?.beneficiaries !== st.beneficiaries) await api.saveStats(st); } catch {}
+}
+async function renderStats() {
+  let st = null;
+  if (isLead(me)) { try { const us = await api.users(); st = calcStats(us); syncStats(us); } catch {} }
+  if (!st) st = await api.stats().catch(() => null);
+  const pts = await api.points().catch(() => []);
+  const evs = await api.events().catch(() => []);
+  const today = new Date().toISOString().slice(0, 10);
+  const items = [
+    ['أعضاء النادي', st ? st.members : '—'],
+    ['المستفيدون', st ? st.beneficiaries : '—'],
+    ['اللجان', COMMITTEES.length],
+    ['الفعاليات القادمة', evs.filter(e => e.date >= today).length],
+  ];
+  $('#statsRow').innerHTML = items.map(([l, v]) => `<div class="stat"><b>${typeof v === 'number' ? ar(v) : v}</b><span>${l}</span></div>`).join('');
+  const total = id => pts.filter(p => p.committee === id).reduce((s, p) => s + (+p.amount || 0), 0);
+  $('#comStats').innerHTML = COMMITTEES.map(c => ({ ...c, n: st?.byCommittee?.[c.id], p: total(c.id) })).sort((a, b) => b.p - a.p)
+    .map((c, i) => `<a class="cs" href="#committees"><span class="cs-n">${esc(c.name)}</span><span class="cs-v">${c.n == null ? '' : `<b>${ar(c.n)}</b> ${memberWord(c.n)} · `}<b class="g">${ar(c.p)}</b> ${pointWord(c.p)}</span>${i === 0 && c.p > 0 ? '<span class="first sm">الأولى</span>' : ''}</a>`).join('');
 }
 
 // ===================== الرئيسية =====================
@@ -301,12 +364,11 @@ async function renderLeaders() {
   const box = $('#leadersBox'); box.innerHTML = '<p class="empty">جارٍ التحميل…</p>';
   const all = (await api.publicLeaders().catch(() => [])).sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role]);
   const pres = all.filter(u => ADMIN.includes(u.role));
-  let html = `<h3 class="group-t">رئاسة النادي <span class="muted" style="font-size:14px;font-weight:500">رئيس و${ar(LIMITS.vp)} نواب</span></h3><div class="people">${pres.map(personCard).join('') || '<p class="empty">لم تُعتمد الرئاسة بعد.</p>'}</div>`;
-  html += genderTabs('leaders');
-  const g = gState.leaders;
+  let html = `<h3 class="group-t">مستشار النادي ومشرفوه</h3><div class="people">${STAFF.map(s => `<div class="card person staff"><div class="av">${initial(s.name.replace(/^(الدكتور|الأستاذة|الأستاذ)\s*/, ''))}</div><h3>${esc(s.name)}</h3><div class="pos">${esc(s.title)}</div></div>`).join('')}</div>`;
+  html += `<h3 class="group-t">رئاسة النادي <span class="muted" style="font-size:14px;font-weight:500">رئيس و${ar(LIMITS.vp)} نواب</span></h3><div class="people">${pres.map(personCard).join('') || '<p class="empty">لم تُعتمد الرئاسة بعد.</p>'}</div>`;
   for (const c of COMMITTEES) {
-    const ms = all.filter(u => u.committee === c.id && (u.gender || 'm') === g && ['leader', 'deputy'].includes(u.role));
-    html += `<h3 class="group-t">${esc(c.name)} ${seat(ms.length, LIMITS.leader + LIMITS.deputy)}</h3><div class="people">${ms.map(personCard).join('') || `<p class="empty">لم يُعتمد قادة ${GROUPS[g]} بعد.</p>`}</div>`;
+    const ms = all.filter(u => u.committee === c.id && ['leader', 'deputy'].includes(u.role));
+    html += `<h3 class="group-t">${esc(c.name)} ${seat(ms.length, LIMITS.leader + LIMITS.deputy)}</h3><div class="people">${ms.map(personCard).join('') || '<p class="empty">لم يُعتمد رؤساء اللجنة بعد.</p>'}</div>`;
   }
   box.innerHTML = html;
 }
@@ -321,9 +383,10 @@ async function renderCommittees() {
   const pts = await api.points().catch(() => []);
   const total = id => pts.filter(p => p.committee === id).reduce((s, p) => s + (+p.amount || 0), 0);
   let members = null;
-  if (me?.approved) { try { members = await api.users(); } catch {} }
-  const inCom = id => (members || []).filter(u => u.committee === id && u.approved);
-  const ranked = COMMITTEES.map(c => ({ ...c, pts: total(c.id), n: members ? inCom(c.id).length : null })).sort((a, b) => b.pts - a.pts);
+  if (me?.approved) { try { members = await api.users(); syncStats(members); } catch {} }
+  const st = members ? null : await api.stats().catch(() => null);
+  const inCom = id => (members || []).filter(u => u.committee === id && u.approved && u.role !== 'beneficiary');
+  const ranked = COMMITTEES.map(c => ({ ...c, pts: total(c.id), n: members ? inCom(c.id).length : (st?.byCommittee?.[c.id] ?? null) })).sort((a, b) => b.pts - a.pts);
   const top = ranked[0]?.pts > 0 ? ranked[0].id : null;
   let html = `<div class="ccards">${ranked.map((c, i) => `
     <button type="button" class="card ccard ${c.id === top ? 'top' : ''} ${c.id === openCom ? 'open' : ''}" data-open="${c.id}" aria-expanded="${c.id === openCom}">
@@ -353,7 +416,7 @@ async function renderCommittees() {
           <button type="button" data-cg="m" aria-selected="${comG === 'm'}">الطلاب (${ar(byG('m').length)})</button>
           <button type="button" data-cg="f" aria-selected="${comG === 'f'}">الطالبات (${ar(byG('f').length)})</button>
         </div>
-        <ul class="names">${list.map(u => `<li><span>${esc(u.name)}</span><span class="badge ${LEAD.includes(u.role) ? 'lead' : ''}">${esc(roleName(u))}</span></li>`).join('') || `<li class="muted">لا يوجد ${GROUPS[comG]} في هذه اللجنة بعد</li>`}</ul>
+        <ul class="names">${list.map(u => { const mp = memberPoints(pts, u.uid); return `<li><span>${esc(u.name)} <span class="badge ${LEAD.includes(u.role) ? 'lead' : ''}">${esc(roleName(u))}</span></span><span class="mpts" title="نقاط العضو"><b>${ar(mp)}</b> ${pointWord(mp)}</span></li>`; }).join('') || `<li class="muted">لا يوجد ${GROUPS[comG]} في هذه اللجنة بعد</li>`}</ul>
         ${log.length ? `<p class="sub-t" style="margin-top:16px">آخر النقاط</p><ul class="names">${log.map(p => `<li><span>${esc(p.reason)}</span><span class="badge ${p.amount < 0 ? 'wait' : 'lead'}">${p.amount > 0 ? '+' : ''}${ar(p.amount)}</span></li>`).join('')}</ul>` : ''}
       </div>
       <div><p class="sub-t">إعلانات اللجنة</p><ul class="ann">${anns.map(a => annItem(a, canDelAnn(a))).join('') || '<li class="empty">لا توجد إعلانات.</li>'}</ul>
@@ -389,7 +452,8 @@ function renderProfile() {
   const f = $('#meForm');
   f.name.value = me.name || ''; f.x.value = me.x || ''; f.linkedin.value = me.linkedin || ''; f.major.value = me.major || '';
   setCollege(f, me.college || '');
-  $('#meLine').innerHTML = `${GENDERS[me.gender || 'm']} · ${esc(ROLES[me.role] || '')}${me.committee ? ' — ' + esc(cname(me.committee)) : ''} &nbsp; ${me.approved ? '<span class="badge lead">معتمد</span>' : '<span class="badge wait">بانتظار الاعتماد</span>'}`;
+  if (me.approved && me.role !== 'beneficiary') api.points().then(p => { const n = memberPoints(p, me.uid); $('#myPts').innerHTML = `نقاطي: <b>${ar(n)}</b> ${pointWord(n)}`; $('#myPts').hidden = false; }).catch(() => {}); else $('#myPts').hidden = true;
+  $('#meLine').innerHTML = `${GENDERS[me.gender || 'm']} · ${esc(roleName(me))}${me.committee ? ' — ' + esc(cname(me.committee)) : ''} &nbsp; ${me.approved ? '<span class="badge lead">معتمد</span>' : '<span class="badge wait">بانتظار الاعتماد</span>'}`;
 }
 
 // ===================== الكلية =====================
@@ -406,8 +470,8 @@ let allCache = [];
 function seatsFull(u, role, committee) {
   if (!LIMITS[role]) return '';
   const g = u.gender || 'm';
-  const taken = allCache.filter(x => x.uid !== u.uid && x.approved && x.role === role && (ADMIN.includes(role) || (x.committee === committee && (x.gender || 'm') === g))).length;
-  return taken >= LIMITS[role] ? `اكتمل العدد: ${ROLES[role]} ${ADMIN.includes(role) ? '' : 'في ' + cname(committee) + ' (' + GROUPS[g] + ')'} — الحد ${ar(LIMITS[role])}` : '';
+  const taken = allCache.filter(x => x.uid !== u.uid && x.approved && x.role === role && (ADMIN.includes(role) || x.committee === committee)).length;
+  return taken >= LIMITS[role] ? `اكتمل العدد: ${ROLES[role]} ${ADMIN.includes(role) ? '' : 'في ' + cname(committee)} — الحد ${ar(LIMITS[role])}` : '';
 }
 async function renderAdmin() {
   if (!isAdmin(me)) return;
@@ -416,9 +480,39 @@ async function renderAdmin() {
   $('#pendN').textContent = ar(pend.length);
   $('#pendBox').innerHTML = pend.length ? pend.map(u => `<div class="req"><div><strong>${esc(u.name)}</strong> <span class="badge">${GENDERS[u.gender || 'm']}</span><br><span class="muted" style="font-size:14px">${esc(ROLES[u.role])}${u.committee ? ' — ' + esc(cname(u.committee)) : ''}</span></div>
     <div class="acts"><button class="btn sm" data-approve="${esc(u.uid)}">اعتماد</button><button class="btn sm ghost" data-demote="${esc(u.uid)}">اعتماد كعضو</button><button class="btn sm del" data-reject="${esc(u.uid)}">رفض</button></div></div>`).join('') : '<p class="empty">لا توجد طلبات.</p>';
-  paintAll();
-  const pts = (await api.points().catch(() => [])).sort((a, b) => b.createdAt - a.createdAt);
-  $('#ptLog').innerHTML = pts.map(p => `<li><span>${esc(cname(p.committee))} — ${esc(p.reason)} <small class="muted">(${esc(p.by || '')})</small></span><span style="display:flex;gap:6px;align-items:center"><span class="badge ${p.amount < 0 ? 'wait' : 'lead'}">${p.amount > 0 ? '+' : ''}${ar(p.amount)}</span><button class="btn sm del" data-del-pt="${esc(p.id)}">حذف</button></span></li>`).join('') || '<li class="muted">لا توجد نقاط مسجّلة.</li>';
+  paintAll(); syncStats(allCache);
+}
+
+// ===================== تسجيل النقاط =====================
+let ptUsers = [];
+async function renderPoints() {
+  if (!isPointsTeam(me)) return;
+  try { ptUsers = (await api.users()).filter(u => u.approved && u.committee && u.role !== 'beneficiary'); } catch (e) { toast(errMsg(e), true); return; }
+  const pts = await api.points().catch(() => []);
+  $('#ptMember').innerHTML = '<option value="">اختر العضو</option>' + COMMITTEES.map(c => {
+    const ms = ptUsers.filter(u => u.committee === c.id).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'));
+    return ms.length ? `<optgroup label="${esc(c.name)}">${ms.map(u => `<option value="${esc(u.uid)}">${esc(u.name)} (${GENDERS[u.gender || 'm']})</option>`).join('')}</optgroup>` : '';
+  }).join('');
+  const board = ptUsers.map(u => ({ u, p: memberPoints(pts, u.uid) })).sort((a, b) => b.p - a.p).slice(0, 10);
+  $('#ptBoard').innerHTML = board.map(({ u, p }, i) => `<li><span><b class="rk">${ar(i + 1)}</b> ${esc(u.name)} <small class="muted">${esc(cname(u.committee))}</small></span><span class="mpts"><b>${ar(p)}</b> ${pointWord(p)}</span></li>`).join('') || '<li class="muted">لا يوجد أعضاء بعد.</li>';
+  $('#ptLog').innerHTML = [...pts].sort((a, b) => b.createdAt - a.createdAt).map(p => `<li><span>${p.kind === 'member' ? `${esc(p.name)} <small class="muted">${esc(cname(p.committee))}</small>` : `<strong>${esc(cname(p.committee))}</strong>`} — ${esc(p.reason)} <small class="muted">(${esc(p.by || '')})</small></span><span style="display:flex;gap:6px;align-items:center"><span class="badge ${p.amount < 0 ? 'wait' : 'lead'}">${p.amount > 0 ? '+' : ''}${ar(p.amount)}</span><button class="btn sm del" data-del-pt="${esc(p.id)}">حذف</button></span></li>`).join('') || '<li class="muted">لا توجد نقاط مسجّلة.</li>';
+}
+
+// ===================== الشات العام =====================
+let chatList = [];
+function paintChat() {
+  const box = $('#chatBox'), atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  box.innerHTML = chatList.length ? chatList.map(m => {
+    const mine = m.uid === me?.uid, canDel = mine || isAdmin(me);
+    return `<div class="msg ${mine ? 'mine' : ''}"><div class="mh"><strong>${esc(m.name)}</strong>${LEAD.includes(m.role) ? `<span class="badge lead">${esc((m.gender === 'f' ? ROLES_F : ROLES)[m.role] || '')}</span>` : ''}<span class="t">${fmtTime(m.createdAt)}</span>${canDel ? `<button class="x" data-del-chat="${esc(m.id)}" aria-label="حذف الرسالة">×</button>` : ''}</div><p>${esc(m.text)}</p></div>`;
+  }).join('') : '<p class="empty">ما فيه رسائل للحين. ابدأ السالفة 👋</p>';
+  if (atBottom || !box.dataset.ready) { box.scrollTop = box.scrollHeight; box.dataset.ready = '1'; }
+}
+function renderChat() {
+  if (!me?.approved) return;
+  if (chatUnsub) return paintChat();
+  $('#chatBox').innerHTML = '<p class="empty">جارٍ التحميل…</p>';
+  chatUnsub = api.watchChat(list => { if (list === null) { $('#chatBox').innerHTML = '<p class="empty">تعذّر تحميل الشات.</p>'; return; } chatList = list; paintChat(); });
 }
 function paintAll() {
   const q = ($('#search').value || '').trim();
@@ -455,8 +549,9 @@ function renderAboutOnce() {
 }
 
 const RENDER = {
-  home: () => { renderTweets(); renderHomeAnn(); },
+  home: () => { renderStats(); renderTweets(); renderHomeAnn(); },
   leaders: renderLeaders, committees: renderCommittees, events: renderEvents, profile: renderProfile, admin: renderAdmin,
+  points: renderPoints, chat: renderChat,
 };
 
 // ===================== الأحداث =====================
@@ -466,9 +561,9 @@ function bind() {
   $('#tabUp').onclick = () => tab(true); $('#tabIn').onclick = () => tab(false);
 
   // خيارات التسجيل
-  $('#upRole').innerHTML = SIGNUP_ROLES.map(r => `<option value="${r}">${ROLES[r]}</option>`).join('');
+  $('#upRole').innerHTML = SIGNUP_ROLES.map(r => `<option value="${r}">${r === 'beneficiary' ? 'مستفيد من النادي (بدون لجنة)' : ROLES[r]}</option>`).join('');
   $('#upCom').innerHTML = '<option value="">اختر اللجنة</option>' + COMMITTEES.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
-  const syncCom = () => { const vp = $('#upRole').value === 'vp'; $('#upComWrap').hidden = vp; $('#upCom').required = !vp; };
+  const syncCom = () => { const no = NO_COMMITTEE.includes($('#upRole').value); $('#upComWrap').hidden = no; $('#upCom').required = !no; };
   $('#upRole').onchange = syncCom; syncCom();
 
   $('#upForm').onsubmit = e => {
@@ -479,9 +574,9 @@ function bind() {
     if (!SIGNUP_ROLES.includes(role)) return;
     if (!GENDERS[f.gender.value]) return err.textContent = 'اختر: طالب أو طالبة';
     const college = getCollege(f); if (!college) return err.textContent = 'اختر كليتك أو اكتب اسمها.';
-    const profile = { name: f.name.value.trim(), gender: f.gender.value, college, role, committee: role === 'vp' ? '' : f.committee.value, x, linkedin: li, major: f.major.value.trim(), approved: role === 'member', public: false, createdAt: Date.now() };
+    const profile = { name: f.name.value.trim(), gender: f.gender.value, college, role, committee: NO_COMMITTEE.includes(role) ? '' : f.committee.value, x, linkedin: li, major: f.major.value.trim(), approved: AUTO_APPROVED.includes(role), public: false, createdAt: Date.now() };
     busy(f.querySelector('.btn'), async () => {
-      try { await api.signUp({ email: f.email.value.trim(), password: f.password.value, profile }); f.reset(); syncCom(); toast(role === 'member' ? 'أهلًا بك في نادي الجوالة!' : 'تم التسجيل، وطلبك بانتظار اعتماد رئيس النادي.'); location.hash = 'profile'; }
+      try { await api.signUp({ email: f.email.value.trim(), password: f.password.value, profile }); f.reset(); syncCom(); toast(AUTO_APPROVED.includes(role) ? 'أهلًا بك في نادي الجوالة!' : 'تم التسجيل، وطلبك بانتظار اعتماد رئيس النادي.'); location.hash = 'profile'; }
       catch (e2) { err.textContent = errMsg(e2); }
     });
   };
@@ -527,7 +622,8 @@ function bind() {
     try {
       if (d.go) { b.disabled = true; await api.attend(d.go, d.on === '1'); renderEvents(); toast(d.on === '1' ? 'تم تسجيل حضورك' : 'تم إلغاء التسجيل'); }
       else if (d.delEv) { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'متأكد؟'; return; } b.disabled = true; await api.deleteEvent(d.delEv); renderEvents(); toast('تم الحذف'); }
-      else if (d.delPt) { b.disabled = true; await api.deletePoints(d.delPt); renderAdmin(); toast('تم حذف القيد'); }
+      else if (d.delPt) { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'متأكد؟'; return; } b.disabled = true; await api.deletePoints(d.delPt); renderPoints(); toast('تم حذف القيد'); }
+      else if (d.delChat) { b.disabled = true; await api.deleteChat(d.delChat); }
       else if (d.delTw) { b.disabled = true; await api.deleteTweet(d.delTw); renderTweets(); toast('تم الحذف'); }
       else if (d.delAnn) { b.disabled = true; await api.deleteAnnouncement(d.delAnn); RENDER[current]?.(); toast('تم الحذف'); }
       else if (d.approve) { const u = allCache.find(x => x.uid === d.approve); const full = seatsFull(u, u.role, u.committee); if (full) return toast(full, true); b.disabled = true; await api.updateUser(d.approve, { approved: true, public: LEAD.includes(u.role) }); toast('تم اعتماد ' + u.name); renderAdmin(); }
@@ -537,7 +633,7 @@ function bind() {
         const tr = b.closest('tr'), role = tr.querySelector('[data-f=role]').value, committee = tr.querySelector('[data-f=committee]').value;
         const u = allCache.find(x => x.uid === d.save);
         const full = u.approved && seatsFull(u, role, committee); if (full) return toast(full, true);
-        b.disabled = true; await api.updateUser(d.save, { role, committee: ADMIN.includes(role) ? '' : committee, public: !!u.approved && LEAD.includes(role) }); toast('تم الحفظ'); renderAdmin();
+        b.disabled = true; await api.updateUser(d.save, { role, committee: NO_COMMITTEE.includes(role) ? '' : committee, public: !!u.approved && LEAD.includes(role) }); toast('تم الحفظ'); renderAdmin();
       }
     } catch (e2) { b.disabled = false; toast(errMsg(e2), true); }
   });
@@ -560,11 +656,23 @@ function bind() {
     const ev = { title: f.title.value.trim(), date: f.date.value, time: f.time.value.trim(), place: f.place.value.trim(), audience: f.audience.value, committee: f.committee.value, desc: f.desc.value.trim(), by: me.uid };
     busy(f.querySelector('.btn'), async () => { try { await api.addEvent(ev); f.reset(); $('#evAdd').open = false; renderEvents(); toast('تمت إضافة الفعالية'); } catch (e2) { toast(errMsg(e2), true); } });
   };
+  const syncKind = () => { const m = $('#ptForm').kind.value === 'member'; $('#ptMemberWrap').hidden = !m; $('#ptComWrap').hidden = m; $('#ptMember').required = m; };
+  $('#ptForm').addEventListener('change', e => { if (e.target.name === 'kind') syncKind(); }); syncKind();
   $('#ptForm').onsubmit = e => {
     e.preventDefault(); const f = e.target, amount = parseInt(f.amount.value, 10);
     if (!amount || Math.abs(amount) > 100) return toast('اكتب عدد نقاط بين ١ و ١٠٠ (أو بالسالب للخصم)', true);
-    busy(f.querySelector('.btn'), async () => { try { await api.addPoints({ committee: f.committee.value, amount, reason: f.reason.value.trim(), by: me.name }); f.reason.value = ''; toast('تم تسجيل النقاط'); renderAdmin(); } catch (e2) { toast(errMsg(e2), true); } });
+    let entry;
+    if (f.kind.value === 'member') {
+      const u = ptUsers.find(x => x.uid === f.member.value); if (!u) return toast('اختر العضو', true);
+      entry = { kind: 'member', uid: u.uid, name: u.name, committee: u.committee };
+    } else entry = { kind: 'committee', committee: f.committee.value };
+    busy(f.querySelector('.btn'), async () => { try { await api.addPoints({ ...entry, amount, reason: f.reason.value.trim(), by: me.name }); f.reason.value = ''; toast('تم تسجيل النقاط'); renderPoints(); } catch (e2) { toast(errMsg(e2), true); } });
   };
+  $('#chatForm').onsubmit = e => {
+    e.preventDefault(); const f = e.target, text = f.text.value.trim(); if (!text) return;
+    busy(f.querySelector('.btn'), async () => { try { await api.sendChat({ uid: me.uid, name: me.name, role: me.role, gender: me.gender || 'm', text: text.slice(0, 500) }); f.reset(); $('#chatBox').scrollTop = $('#chatBox').scrollHeight; } catch (e2) { toast(errMsg(e2), true); } });
+  };
+  $('#chatForm').text.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#chatForm').requestSubmit(); } });
   $('#twNext').onclick = () => { clearInterval(twTimer); twGo(twIdx + 1); };
   $('#twPrev').onclick = () => { clearInterval(twTimer); twGo(twIdx - 1); };
   $('#twTrack').addEventListener('keydown', e => { if (e.key === 'ArrowLeft') twGo(twIdx + 1); if (e.key === 'ArrowRight') twGo(twIdx - 1); });
