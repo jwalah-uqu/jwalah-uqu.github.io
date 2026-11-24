@@ -270,3 +270,11 @@ footer small{opacity:.75;font-size:13px}
 .hero-w{font-size:clamp(24px,3vw,34px);color:#00676E;margin:14px 0 4px;line-height:1.3}
 .hero-p{margin:0 auto 4px;color:#767070;font-size:15.5px;max-width:42ch}
 .hero .hero-h{font-size:clamp(22px,2.6vw,30px);margin-top:6px}
+/* مربع التغريدات بارتفاع ثابت: التغريدة الطويلة تنسحب داخله بدل ما تكبّر الصفحة */
+.tw-card .tw-track{height:clamp(320px,46vh,430px);align-items:stretch}
+.tw-card .tw{height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#b9c9c7 transparent}
+.tw-card .tw.embed{padding:8px 10px}
+.tw-card .tw .act{position:sticky;bottom:-8px;background:inherit;padding:8px 0 4px;margin-top:auto}
+.tw-card .tw.embed .twitter-tweet{margin:0 auto!important;max-width:100%!important}
+.hero-in{align-items:center}
+@media(max-width:700px){.tw-card .tw-track{height:380px}}
