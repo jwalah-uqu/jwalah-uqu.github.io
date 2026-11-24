@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 
@@ -121,7 +121,7 @@
 <!-- ============ القادة ============ -->
 <section class="page" data-page="leaders" hidden>
   <div class="wrap">
-    <div class="head"><h1>هيكلة النادي</h1><p>مستشار النادي ومشرفوه، ورئاسة النادي، ورؤساء اللجان ونوابهم.</p></div>
+    <div class="head"><h1>هيكلة النادي</h1><p>المستشارون، رئاسة النادي، رؤساء اللجان ونوابهم، وقادة الأرهط.</p></div>
     <div id="leadersBox"></div>
   </div>
 </section>
@@ -186,12 +186,13 @@
         <div class="row2">
           <label>دورك في النادي<select name="role" id="upRole" required></select></label>
           <label id="upComWrap">اللجنة<select name="committee" id="upCom"></select></label>
+          <label id="upPatrolWrap" hidden><span id="upPatrolLbl">الرهط (اختياري)</span><select name="patrol" id="upPatrol"></select></label>
         </div>
         <div class="row2">
           <label>حساب X <small>اختياري</small><input name="x" class="ltr" placeholder="@username"></label>
           <label>LinkedIn <small>اختياري</small><input name="linkedin" class="ltr" placeholder="linkedin.com/in/..."></label>
         </div>
-        <p class="note">العضو والمستفيد يدخلون مباشرة. الأدوار القيادية (نائب رئيس النادي، رئيس لجنة، نائب رئيس لجنة) تحتاج اعتماد رئيس النادي. والمستفيد يحضر الفعاليات بدون لجنة ولا نقاط.</p>
+        <p class="note">العضو والمستفيد يدخلون مباشرة. الأدوار القيادية (نائب رئيس النادي، رئيس لجنة ونائبه، قائد رهط) تحتاج اعتماد رئاسة النادي. والمستفيد يحضر الفعاليات بدون لجنة ولا نقاط.</p>
         <p class="err" id="upErr" role="alert"></p>
         <button class="btn gold">إنشاء الحساب</button>
       </form>
@@ -246,7 +247,7 @@
 <!-- ============ تسجيل النقاط ============ -->
 <section class="page" data-page="points" hidden>
   <div class="wrap">
-    <div class="head"><h1>تسجيل النقاط</h1><p>لفريق النقاط: رئيس النادي ونوابه، ورئيسا لجنة الموارد البشرية ونائباها.</p></div>
+    <div class="head"><h1>تسجيل النقاط</h1><p>لفريق النقاط: رئيس النادي ونوابه، ورئيس لجنة التقنية والموارد البشرية ونائبه.</p></div>
     <div class="cols">
       <div class="card pad">
         <h2>نقاط جديدة</h2>
@@ -306,7 +307,7 @@
   <symbol id="li" viewBox="0 0 24 24"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.5h.06c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1v5.45h-4v-4.83c0-1.15-.02-2.63-1.6-2.63-1.6 0-1.85 1.25-1.85 2.55v4.91h-4v-11Z"/></symbol>
 </svg>
 
-<script src="firebase-config.js?v=13" onerror="window.FIREBASE_CONFIG=null"></script>
-<script src="app.js?v=13"></script>
+<script src="firebase-config.js?v=15" onerror="window.FIREBASE_CONFIG=null"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>

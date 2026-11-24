@@ -278,3 +278,21 @@ footer small{opacity:.75;font-size:13px}
 .tw-card .tw.embed .twitter-tweet{margin:0 auto!important;max-width:100%!important}
 .hero-in{align-items:center}
 @media(max-width:700px){.tw-card .tw-track{height:380px}}
+
+/* الهيكلة */
+.people.p3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:700px){.people.p3{grid-template-columns:minmax(0,1fr)}}
+.cboxes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+.cbox{padding:18px;border-top:4px solid var(--gold)}
+.cbox h4{margin:0 0 10px;font-size:18px;color:var(--teal);line-height:1.4}
+.crow{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:16px}
+.crow span{color:var(--muted)}
+.patrols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media(max-width:700px){.patrols{grid-template-columns:minmax(0,1fr)}}
+.pgroup{border:2px solid var(--line);border-radius:20px;padding:16px;background:var(--panel)}
+.pgroup h4{margin:0 0 12px;text-align:center;font-size:19px;color:var(--teal)}
+.plist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media(max-width:480px){.plist{grid-template-columns:minmax(0,1fr)}}
+.patrol{background:var(--soft);border-radius:14px;padding:12px;text-align:center;display:grid;gap:4px;border-bottom:3px solid var(--gold)}
+.patrol b{color:var(--teal);font-size:16px}.patrol span{font-size:15px}
+.av.fl{font-size:34px;font-family:'Segoe UI Symbol','DejaVu Sans',sans-serif}

@@ -4,27 +4,33 @@
    - تجريبي: بدون إعدادات ← البيانات في متصفح الزائر فقط (للمعاينة) */
 {
 // ===================== الإعدادات =====================
+// اللجان حسب هيكلة النادي 1448هـ
 const COMMITTEES = [
-  { id: 'hr',      name: 'لجنة الموارد البشرية' },
-  { id: 'quality', name: 'لجنة جودة الحياة' },
-  { id: 'comp',    name: 'لجنة المسابقات والأنشطة' },
   { id: 'pr',      name: 'لجنة العلاقات العامة' },
-  { id: 'media',   name: 'قسم الإعلام والتصميم' },
+  { id: 'quality', name: 'لجنة جودة الحياة والتطوير' },
+  { id: 'comp',    name: 'لجنة المسابقات والأنشطة الرياضية' },
+  { id: 'hr',      name: 'لجنة التقنية والموارد البشرية' },
 ];
 // الهيكل: رئيس النادي + 3 نواب، ولكل لجنة رئيسان ونائبان (طلاب وطالبات معًا)
-const LIMITS = { president: 1, vp: 3, leader: 2, deputy: 2 };
+const LIMITS = { president: 1, vp: 3, leader: 2, deputy: 2, patrol_leader: 1 };
+// الأرهط: فرق جانبية بجانب اللجان، لكل رهط قائد
+const PATROLS = [
+  { id: 'makkah', name: 'رهط مكة', g: 'm' }, { id: 'qimma', name: 'رهط القمة', g: 'm' }, { id: 'jood', name: 'رهط الجود', g: 'm' },
+  { id: 'himma', name: 'رهط همة', g: 'f' }, { id: 'nukhba', name: 'رهط النخبة', g: 'f' }, { id: 'aoun', name: 'رهط عون', g: 'f' },
+];
+const pname = id => PATROLS.find(p => p.id === id)?.name || '';
 const COLLEGES = ['كلية الحاسبات', 'كلية الهندسة والعمارة الإسلامية', 'كلية العلوم التطبيقية', 'كلية الطب', 'كلية طب الأسنان', 'كلية الصيدلة', 'كلية العلوم الطبية التطبيقية', 'كلية التمريض', 'كلية الصحة العامة والمعلوماتية الصحية', 'كلية إدارة الأعمال', 'كلية الشريعة والدراسات الإسلامية', 'كلية الدعوة وأصول الدين', 'كلية اللغة العربية وآدابها', 'كلية التربية', 'كلية العلوم الاجتماعية'];
-const ROLES = { president: 'رئيس النادي', vp: 'نائب الرئيس', leader: 'رئيس لجنة', deputy: 'نائب رئيس لجنة', member: 'عضو', beneficiary: 'مستفيد' };
-const SIGNUP_ROLES = ['member', 'beneficiary', 'deputy', 'leader', 'vp'];
-const NO_COMMITTEE = ['president', 'vp', 'beneficiary'];
+const ROLES = { president: 'رئيس النادي', vp: 'نائب الرئيس', leader: 'رئيس لجنة', deputy: 'نائب رئيس لجنة', patrol_leader: 'قائد رهط', member: 'عضو', beneficiary: 'مستفيد' };
+const SIGNUP_ROLES = ['member', 'beneficiary', 'patrol_leader', 'deputy', 'leader', 'vp'];
+const NO_COMMITTEE = ['president', 'vp', 'beneficiary', 'patrol_leader'];
 const AUTO_APPROVED = ['member', 'beneficiary'];
-const LEAD = ['president', 'vp', 'leader', 'deputy'];
+const LEAD = ['president', 'vp', 'leader', 'deputy', 'patrol_leader'];
 const ADMIN = ['president', 'vp'];
 const GENDERS = { m: 'طالب', f: 'طالبة' };
-const ROLES_F = { president: 'رئيسة النادي', vp: 'نائبة الرئيس', leader: 'رئيسة لجنة', deputy: 'نائبة رئيس لجنة', member: 'عضوة', beneficiary: 'مستفيدة' };
+const ROLES_F = { president: 'رئيسة النادي', vp: 'نائبة الرئيس', leader: 'رئيسة لجنة', deputy: 'نائبة رئيس لجنة', patrol_leader: 'قائدة رهط', member: 'عضوة', beneficiary: 'مستفيدة' };
 const roleName = u => (u.gender === 'f' ? ROLES_F : ROLES)[u.role] || '';
 const GROUPS = { m: 'الطلاب', f: 'الطالبات' };
-const ROLE_ORDER = { president: 0, vp: 1, leader: 2, deputy: 3, member: 4, beneficiary: 5 };
+const ROLE_ORDER = { president: 0, vp: 1, leader: 2, deputy: 3, patrol_leader: 4, member: 5, beneficiary: 6 };
 
 // ===================== أدوات =====================
 const $ = s => document.querySelector(s);
@@ -36,13 +42,13 @@ const fmtTime = t => { try { const d = new Date(t); return d.toLocaleDateString(
 const fmtDate = t => { try { return new Date(t).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long' }); } catch { return ''; } };
 const isLead = u => !!u && u.approved && LEAD.includes(u.role);
 const isAdmin = u => !!u && u.approved && ADMIN.includes(u.role);
-// فريق تسجيل النقاط: الرئيس ونوابه + رئيسا لجنة الموارد البشرية ونائباها
+// فريق تسجيل النقاط: الرئيس ونوابه + رئيس لجنة التقنية والموارد البشرية ونائبه
 const isPointsTeam = u => isAdmin(u) || (!!u && u.approved && u.committee === 'hr' && ['leader', 'deputy'].includes(u.role));
 // مستشار النادي ومشرفوه
 const STAFF = [
-  { name: 'الدكتور عبدالرحمن مدخلي', title: 'مستشار النادي' },
-  { name: 'الأستاذ أحمد حبيب الله', title: 'مشرف النادي' },
-  { name: 'الأستاذة هنيدة الهاشمي', title: 'مشرفة النادي' },
+  { name: 'أ. أحمد حبيب الله', title: 'مشرف النادي' },
+  { name: 'د. عبدالرحمن مدخلي', title: 'مستشار النادي' },
+  { name: 'أ. هنيدة الهاشمي', title: 'مشرفة النادي' },
 ];
 const memberPoints = (pts, uid) => pts.filter(p => p.uid === uid).reduce((s, p) => s + (+p.amount || 0), 0);
 
@@ -78,45 +84,36 @@ async function busy(btn, fn) { btn.disabled = true; try { return await fn(); } f
 
 // ===================== طبقة البيانات: تجريبي =====================
 function DemoBackend() {
-  const KEY = 'jwalah-demo-v6', SKEY = 'jwalah-demo-session';
+  const KEY = 'jwalah-demo-v8', SKEY = 'jwalah-demo-session';
   const H123 = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
   const now = Date.now(), day = 864e5;
   const P = (uid, name, role, committee, extra = {}) => ({ uid, name, role, committee, email: uid + '@demo.sa', pw: H123, approved: true, public: role !== 'member', gender: 'm', x: '', linkedin: '', major: '', createdAt: now, ...extra });
   const seed = () => ({
     users: [
-      P('president', 'عبدالله الحربي', 'president', '', { x: 'https://x.com/jwalah_uqu' }),
-      P('vp1', 'فيصل الغامدي', 'vp', ''), P('vp2', 'محمد الزهراني', 'vp', ''),
-      P('l1', 'سعد العتيبي', 'leader', 'comp'), P('d1', 'خالد المالكي', 'deputy', 'comp'),
-      P('l2', 'عمر الشهري', 'leader', 'quality'), P('d2', 'يوسف القرشي', 'deputy', 'quality'),
-      P('l3', 'بندر السلمي', 'leader', 'pr'), P('l4', 'نواف الثبيتي', 'leader', 'hr'),
-      P('l5', 'تركي الحارثي', 'leader', 'media'),
-      P('m1', 'أحمد الجهني', 'member', 'comp'), P('m2', 'ريان اللحياني', 'member', 'quality'),
-      P('m3', 'مازن الشريف', 'member', 'quality'), P('m4', 'سلطان المطيري', 'member', 'media'),
-      P('p1', 'إياد البقمي', 'leader', 'pr', { approved: false, public: false }),
-      P('fl1', 'ريم العمري', 'leader', 'comp', { gender: 'f' }), P('fd1', 'لمى الحربي', 'deputy', 'comp', { gender: 'f' }),
-      P('fl2', 'سارة الغامدي', 'leader', 'quality', { gender: 'f' }), P('fm1', 'نورة الزهراني', 'member', 'quality', { gender: 'f' }),
-      P('fm2', 'جود الشهري', 'member', 'quality', { gender: 'f' }), P('fl3', 'هيا القحطاني', 'leader', 'media', { gender: 'f' }),
-      P('fm3', 'رهف المالكي', 'member', 'media', { gender: 'f' }),
-      P('b1', 'عبدالعزيز السفياني', 'beneficiary', ''), P('b2', 'شهد الحازمي', 'beneficiary', '', { gender: 'f' }),
+      P('president', 'المثنى وترة', 'president', ''),
+      P('vp1', 'أصيل بادحدح', 'vp', '', { x: 'https://x.com/aseell8s' }), P('vp2', 'دينا عزالدين', 'vp', '', { gender: 'f' }),
+      P('pr1', 'هديل الدليوي', 'leader', 'pr', { gender: 'f' }), P('pr2', 'حسن مختار', 'deputy', 'pr'),
+      P('q1', 'نواف الزهراني', 'leader', 'quality'), P('q2', 'شهد النفيعي', 'deputy', 'quality', { gender: 'f' }),
+      P('c1', 'حسان زوقر', 'leader', 'comp'), P('c2', 'ريتال الحربي', 'deputy', 'comp', { gender: 'f' }),
+      P('hr1', 'رهام فلاته', 'leader', 'hr', { gender: 'f' }), P('hr2', 'حمزة مثنى', 'deputy', 'hr'),
+      P('pt1', 'سلمان العصيمي', 'patrol_leader', '', { patrol: 'makkah' }), P('pt2', 'نواف الشمراني', 'patrol_leader', '', { patrol: 'qimma' }), P('pt3', 'عوض شراب', 'patrol_leader', '', { patrol: 'jood' }),
+      P('pt4', 'جنى عابد', 'patrol_leader', '', { patrol: 'himma', gender: 'f' }), P('pt5', 'ريتاج شعيري', 'patrol_leader', '', { patrol: 'nukhba', gender: 'f' }), P('pt6', 'سديم الثبيتي', 'patrol_leader', '', { patrol: 'aoun', gender: 'f' }),
     ],
     ann: [
-      { id: 'a1', committee: 'general', text: 'فتح باب التسجيل في معسكرات الخدمة العامة، سجّل من حسابك وتابع لجنتك.', authorUid: 'president', authorName: 'عبدالله الحربي', createdAt: now - day },
-      { id: 'a2', committee: 'general', text: 'اجتماع عام لأعضاء النادي يوم الأحد بعد العصر في مقر النادي.', authorUid: 'vp1', authorName: 'فيصل الغامدي', createdAt: now - 3 * day },
-      { id: 'a3', committee: 'quality', text: 'توزيع المناطق على الأعضاء غدًا، الحضور 8 صباحًا.', authorUid: 'l2', authorName: 'عمر الشهري', createdAt: now - 2 * day },
-      { id: 'a4', committee: 'quality', text: 'اجتماع الطالبات في اللجنة يوم الثلاثاء الساعة 10 صباحًا.', authorUid: 'fl2', authorName: 'سارة الغامدي', createdAt: now - day },
+      { id: 'a1', committee: 'general', text: 'حياكم الله في منصة نادي الجوالة، سجّلوا حساباتكم واختاروا لجانكم.', authorUid: 'president', authorName: 'المثنى وترة', createdAt: now - day },
+      { id: 'a2', committee: 'quality', text: 'اجتماع اللجنة يوم الأحد بعد العصر في مقر النادي.', authorUid: 'q1', authorName: 'نواف الزهراني', createdAt: now - 2 * day },
     ],
     points: [
-      { id: 'p1', committee: 'media', amount: 2, reason: 'تغطية معسكر الخدمة العامة', by: 'عبدالله الحربي', createdAt: now - day },
-      { id: 'p3', kind: 'member', uid: 'm4', name: 'سلطان المطيري', committee: 'media', amount: 3, reason: 'تصوير فعالية', by: 'نواف الثبيتي', createdAt: now },
-      { id: 'p4', kind: 'member', uid: 'fm1', name: 'نورة الزهراني', committee: 'quality', amount: 2, reason: 'تنظيم ركن', by: 'نواف الثبيتي', createdAt: now },
-      { id: 'p2', committee: 'quality', amount: 3, reason: 'تنظيم لقاء الطالبات', by: 'عبدالله الحربي', createdAt: now - day },
+      { id: 'p1', kind: 'member', uid: 'q2', name: 'شهد النفيعي', committee: 'quality', amount: 3, reason: 'تنظيم فعالية', by: 'رهام فلاته', createdAt: now - day },
+      { id: 'p2', kind: 'member', uid: 'pr1', name: 'هديل الدليوي', committee: 'pr', amount: 2, reason: 'تنسيق شراكة', by: 'رهام فلاته', createdAt: now },
+      { id: 'p3', kind: 'committee', committee: 'comp', amount: 2, reason: 'تنظيم مسابقة', by: 'المثنى وترة', createdAt: now },
     ],
     events: [
       { id: 'e1', title: 'لقاء تعريفي بنادي الجوالة', date: new Date(now + 3 * day).toISOString().slice(0, 10), time: '7 مساءً', place: 'مقر النادي', audience: 'm', committee: '', desc: 'تعرّف على النادي ولجانه وبرنامج الفصل.', attendees: [], createdAt: now },
       { id: 'e2', title: 'ورشة الإسعافات الأولية', date: new Date(now + 6 * day).toISOString().slice(0, 10), time: '10 صباحًا', place: 'قاعة الأنشطة', audience: 'f', committee: 'quality', desc: '', attendees: [], createdAt: now },
     ],
     chat: [
-      { id: 'c1', uid: 'president', name: 'عبدالله الحربي', role: 'president', gender: 'm', text: 'حياكم الله في الشات العام لنادي الجوالة 🌿', createdAt: now - 3600e3 },
+      { id: 'c1', uid: 'president', name: 'المثنى وترة', role: 'president', gender: 'm', text: 'حياكم الله في الشات العام لنادي الجوالة 🌿', createdAt: now - 3600e3 },
     ],
     tweets: [
       { id: 't1', url: 'https://x.com/jwalah_uqu', text: 'الجوالة.. شرف الخدمة وروح العطاء 🤍\n#الكشفية_درب_تعلم_لاينتهي', createdAt: now - day },
@@ -365,22 +362,35 @@ function genderTabs(page) {
 // ===================== القادة =====================
 function personCard(u) {
   const x = xUrl(u.x), li = liUrl(u.linkedin);
-  const pos = roleName(u) + (u.committee ? ' — ' + cname(u.committee) : '');
+  const pos = roleName(u) + (u.committee ? ' — ' + cname(u.committee) : u.patrol && u.role === 'patrol_leader' ? ' — ' + pname(u.patrol) : '');
   return `<div class="card person"><div class="av">${initial(u.name)}</div><h3>${esc(u.name)}</h3><div class="pos">${esc(pos)}</div>
     ${u.major || u.college ? `<div class="pos" style="font-size:13px">${esc([u.major, u.college].filter(Boolean).join(' · '))}</div>` : ''}
     ${x || li ? `<div class="socials">${x ? `<a href="${esc(x)}" target="_blank" rel="noopener" aria-label="X"><svg class="ic"><use href="#xl" fill="currentColor"/></svg></a>` : ''}${li ? `<a href="${esc(li)}" target="_blank" rel="noopener" aria-label="LinkedIn"><svg class="ic"><use href="#li" fill="currentColor"/></svg></a>` : ''}</div>` : ''}</div>`;
 }
 const seat = (n, max) => `<span class="seat">${ar(n)} / ${ar(max)}</span>`;
+function staffCard(p) {
+  return `<div class="card person staff"><div class="av fl" aria-hidden="true">⚜</div><div class="pos" style="color:var(--gold);font-weight:700">${esc(p.title)}</div><h3>${esc(p.name)}</h3></div>`;
+}
+// الأرهط: قائد كل رهط (بعد اعتماده) وعدد أعضائه إذا كانت القائمة متاحة
+function patrolsHtml(users, members) {
+  const grp = (g, t) => `<div class="pgroup"><h4>${t}</h4><div class="plist">${PATROLS.filter(p => p.g === g).map(p => {
+    const ld = users.find(u => u.role === 'patrol_leader' && u.patrol === p.id && u.approved);
+    const n = members ? members.filter(u => u.patrol === p.id && u.approved).length : null;
+    return `<div class="patrol"><b>${esc(p.name)}</b><span>${ld ? esc(ld.name) : '<i class="muted">لم يُعتمد القائد بعد</i>'}</span>${n === null ? '' : `<small class="muted">${n} ${memberWord(n)}</small>`}</div>`;
+  }).join('')}</div></div>`;
+  return `<div class="patrols">${grp('m', 'أرهط الطلاب')}${grp('f', 'أرهط الطالبات')}</div>`;
+}
 async function renderLeaders() {
   const box = $('#leadersBox'); box.innerHTML = '<p class="empty">جارٍ التحميل…</p>';
   const all = (await api.publicLeaders().catch(() => [])).sort((a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role]);
   const pres = all.filter(u => ADMIN.includes(u.role));
-  let html = `<h3 class="group-t">مستشار النادي ومشرفوه</h3><div class="people">${STAFF.map(s => `<div class="card person staff"><div class="av">${initial(s.name.replace(/^(الدكتور|الأستاذة|الأستاذ)\s*/, ''))}</div><h3>${esc(s.name)}</h3><div class="pos">${esc(s.title)}</div></div>`).join('')}</div>`;
-  html += `<h3 class="group-t">رئاسة النادي <span class="muted" style="font-size:14px;font-weight:500">رئيس و${ar(LIMITS.vp)} نواب</span></h3><div class="people">${pres.map(personCard).join('') || '<p class="empty">لم تُعتمد الرئاسة بعد.</p>'}</div>`;
+  let html = `<h3 class="group-t">المستشارون</h3><div class="people p3">${STAFF.map(staffCard).join('')}</div>`;
+  html += `<h3 class="group-t">رئاسة النادي <span class="muted" style="font-size:14px;font-weight:500">رئيس و${LIMITS.vp} نواب</span></h3><div class="people">${pres.map(personCard).join('') || '<p class="empty">لم تُعتمد الرئاسة بعد.</p>'}</div>`;
   for (const c of COMMITTEES) {
     const ms = all.filter(u => u.committee === c.id && ['leader', 'deputy'].includes(u.role));
-    html += `<h3 class="group-t">${esc(c.name)} ${seat(ms.length, LIMITS.leader + LIMITS.deputy)}</h3><div class="people">${ms.map(personCard).join('') || '<p class="empty">لم يُعتمد رؤساء اللجنة بعد.</p>'}</div>`;
+    html += `<h3 class="group-t">${esc(c.name)}</h3><div class="people">${ms.map(personCard).join('') || '<p class="empty">لم يُعتمد رئيس اللجنة ونائبه بعد.</p>'}</div>`;
   }
+  html += `<h3 class="group-t">الأرهط <span class="muted" style="font-size:14px;font-weight:500">فرق جانبية بجانب اللجان، لكل رهط قائد</span></h3>${patrolsHtml(all, null)}`;
   box.innerHTML = html;
 }
 
@@ -405,10 +415,11 @@ async function renderCommittees() {
   let members = null;
   if (me?.approved) { try { members = await api.users(); syncStats(members); } catch {} }
   const st = members ? null : await api.stats().catch(() => null);
+  const pubLeaders = members ? [] : await api.publicLeaders().catch(() => []);
   const inCom = id => (members || []).filter(u => u.committee === id && u.approved && u.role !== 'beneficiary');
   const ranked = COMMITTEES.map(c => ({ ...c, pts: total(c.id), n: members ? inCom(c.id).length : comCount(st, c.id) })).sort((a, b) => b.pts - a.pts);
   const top = ranked[0]?.pts > 0 ? ranked[0].id : null;
-  let html = `<div class="ccards">${ranked.map((c, i) => comCard(c, i, top, 'button')).join('')}</div>`;
+  let html = `<div class="ccards">${ranked.map((c, i) => comCard(c, i, top, 'button')).join('')}</div><h3 class="group-t">الأرهط <span class="muted" style="font-size:14px;font-weight:500">فرق جانبية بجانب اللجان</span></h3>${patrolsHtml(members || pubLeaders, members)}`;
 
   if (!me) { box.innerHTML = html + '<div class="card pad section" style="text-align:center"><p>تفاصيل اللجان وأعضاؤها وإعلاناتها لأعضاء النادي.</p><a class="btn" href="#join">سجّل دخولك</a></div>'; return; }
   if (!me.approved) { box.innerHTML = html + '<p class="empty section">طلبك بانتظار اعتماد رئيس النادي، وبعدها تقدر تفتح تفاصيل اللجان.</p>'; return; }
@@ -467,7 +478,7 @@ function renderProfile() {
   f.name.value = me.name || ''; f.x.value = me.x || ''; f.linkedin.value = me.linkedin || ''; f.major.value = me.major || '';
   setCollege(f, me.college || '');
   if (me.approved && me.role !== 'beneficiary') api.points().then(p => { const n = memberPoints(p, me.uid); $('#myPts').innerHTML = `نقاطي: <b>${ar(n)}</b> ${pointWord(n)}`; $('#myPts').hidden = false; }).catch(() => {}); else $('#myPts').hidden = true;
-  $('#meLine').innerHTML = `${GENDERS[me.gender || 'm']} · ${esc(roleName(me))}${me.committee ? ' — ' + esc(cname(me.committee)) : ''} &nbsp; ${me.approved ? '<span class="badge lead">معتمد</span>' : '<span class="badge wait">بانتظار الاعتماد</span>'}`;
+  $('#meLine').innerHTML = `${GENDERS[me.gender || 'm']} · ${esc(roleName(me))}${me.committee ? ' — ' + esc(cname(me.committee)) : ''}${me.patrol ? ' · ' + esc(pname(me.patrol)) : ''} &nbsp; ${me.approved ? '<span class="badge lead">معتمد</span>' : '<span class="badge wait">بانتظار الاعتماد</span>'}`;
 }
 
 // ===================== الكلية =====================
@@ -484,15 +495,15 @@ let allCache = [];
 function seatsFull(u, role, committee) {
   if (!LIMITS[role]) return '';
   const g = u.gender || 'm';
-  const taken = allCache.filter(x => x.uid !== u.uid && x.approved && x.role === role && (ADMIN.includes(role) || x.committee === committee)).length;
-  return taken >= LIMITS[role] ? `اكتمل العدد: ${ROLES[role]} ${ADMIN.includes(role) ? '' : 'في ' + cname(committee)} — الحد ${ar(LIMITS[role])}` : '';
+  const taken = allCache.filter(x => x.uid !== u.uid && x.approved && x.role === role && (ADMIN.includes(role) || (role === 'patrol_leader' ? x.patrol === u.patrol : x.committee === committee))).length;
+  return taken >= LIMITS[role] ? `اكتمل العدد: ${ROLES[role]} ${ADMIN.includes(role) ? '' : 'في ' + (role === 'patrol_leader' ? pname(u.patrol) : cname(committee))} — الحد ${ar(LIMITS[role])}` : '';
 }
 async function renderAdmin() {
   if (!isAdmin(me)) return;
   try { allCache = await api.users(); } catch (e) { toast(errMsg(e), true); return; }
   const pend = allCache.filter(u => !u.approved);
   $('#pendN').textContent = ar(pend.length);
-  $('#pendBox').innerHTML = pend.length ? pend.map(u => `<div class="req"><div><strong>${esc(u.name)}</strong> <span class="badge">${GENDERS[u.gender || 'm']}</span><br><span class="muted" style="font-size:14px">${esc(ROLES[u.role])}${u.committee ? ' — ' + esc(cname(u.committee)) : ''}</span></div>
+  $('#pendBox').innerHTML = pend.length ? pend.map(u => `<div class="req"><div><strong>${esc(u.name)}</strong> <span class="badge">${GENDERS[u.gender || 'm']}</span><br><span class="muted" style="font-size:14px">${esc(ROLES[u.role])}${u.committee ? ' — ' + esc(cname(u.committee)) : ''}${u.patrol ? ' — ' + esc(pname(u.patrol)) : ''}</span></div>
     <div class="acts"><button class="btn sm" data-approve="${esc(u.uid)}">اعتماد</button><button class="btn sm ghost" data-demote="${esc(u.uid)}">اعتماد كعضو</button><button class="btn sm del" data-reject="${esc(u.uid)}">رفض</button></div></div>`).join('') : '<p class="empty">لا توجد طلبات.</p>';
   paintAll(); syncStats(allCache);
 }
@@ -536,7 +547,7 @@ function paintAll() {
   const comOpts = c => `<option value="">—</option>` + COMMITTEES.map(x => `<option value="${x.id}" ${x.id === c ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
   $('#allBox').innerHTML = list.map(u => {
     const self = u.uid === me.uid, locked = self || (u.role === 'president' && me.role !== 'president');
-    return `<tr data-uid="${esc(u.uid)}"><td><strong>${esc(u.name)}</strong> <span class="badge">${GENDERS[u.gender || 'm']}</span></td>
+    return `<tr data-uid="${esc(u.uid)}"><td><strong>${esc(u.name)}</strong> <span class="badge">${GENDERS[u.gender || 'm']}</span>${u.patrol ? ` <span class="badge">${esc(pname(u.patrol))}</span>` : ''}</td>
       <td><select data-f="role" ${locked ? 'disabled' : ''} aria-label="الدور">${roleOpts(u.role)}</select></td>
       <td><select data-f="committee" ${locked ? 'disabled' : ''} aria-label="اللجنة">${comOpts(u.committee)}</select></td>
       <td>${u.approved ? '<span class="badge lead">معتمد</span>' : '<span class="badge wait">معلّق</span>'}</td>
@@ -577,7 +588,16 @@ function bind() {
   // خيارات التسجيل
   $('#upRole').innerHTML = SIGNUP_ROLES.map(r => `<option value="${r}">${r === 'beneficiary' ? 'مستفيد من النادي (بدون لجنة)' : ROLES[r]}</option>`).join('');
   $('#upCom').innerHTML = '<option value="">اختر اللجنة</option>' + COMMITTEES.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
-  const syncCom = () => { const no = NO_COMMITTEE.includes($('#upRole').value); $('#upComWrap').hidden = no; $('#upCom').required = !no; };
+  const syncCom = () => {
+    const r = $('#upRole').value, no = NO_COMMITTEE.includes(r), g = $('#upForm').gender.value || 'm';
+    $('#upComWrap').hidden = no; $('#upCom').required = !no;
+    const showP = r === 'member' || r === 'patrol_leader', keep = $('#upPatrol').value;
+    $('#upPatrolWrap').hidden = !showP; $('#upPatrol').required = r === 'patrol_leader';
+    $('#upPatrolLbl').textContent = r === 'patrol_leader' ? 'الرهط' : 'الرهط (اختياري)';
+    $('#upPatrol').innerHTML = '<option value="">' + (r === 'patrol_leader' ? 'اختر الرهط' : 'بدون رهط') + '</option>' + PATROLS.filter(p => p.g === g).map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+    if (PATROLS.some(p => p.id === keep && p.g === g)) $('#upPatrol').value = keep;
+  };
+  $('#upForm').addEventListener('change', e => { if (e.target.name === 'gender') syncCom(); });
   $('#upRole').onchange = syncCom; syncCom();
 
   $('#upForm').onsubmit = e => {
@@ -588,7 +608,8 @@ function bind() {
     if (!SIGNUP_ROLES.includes(role)) return;
     if (!GENDERS[f.gender.value]) return err.textContent = 'اختر: طالب أو طالبة';
     const college = getCollege(f); if (!college) return err.textContent = 'اختر كليتك أو اكتب اسمها.';
-    const profile = { name: f.name.value.trim(), gender: f.gender.value, college, role, committee: NO_COMMITTEE.includes(role) ? '' : f.committee.value, x, linkedin: li, major: f.major.value.trim(), approved: AUTO_APPROVED.includes(role), public: false, createdAt: Date.now() };
+    if (role === 'patrol_leader' && !f.patrol.value) return err.textContent = 'اختر الرهط.';
+    const profile = { name: f.name.value.trim(), gender: f.gender.value, college, role, committee: NO_COMMITTEE.includes(role) ? '' : f.committee.value, patrol: (role === 'member' || role === 'patrol_leader') ? f.patrol.value : '', x, linkedin: li, major: f.major.value.trim(), approved: AUTO_APPROVED.includes(role), public: false, createdAt: Date.now() };
     busy(f.querySelector('.btn'), async () => {
       try { await api.signUp({ email: f.email.value.trim(), password: f.password.value, profile }); f.reset(); syncCom(); toast(AUTO_APPROVED.includes(role) ? 'أهلًا بك في نادي الجوالة!' : 'تم التسجيل، وطلبك بانتظار اعتماد رئيس النادي.'); location.hash = 'profile'; }
       catch (e2) { err.textContent = errMsg(e2); }
