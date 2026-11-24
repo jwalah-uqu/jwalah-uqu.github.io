@@ -578,9 +578,9 @@ function bind() {
   renderAboutOnce(); bind();
   const cfg = window.FIREBASE_CONFIG;
   if (cfg && cfg.apiKey) {
-    try { api = await FirebaseBackend(cfg); }
-    catch { api = DemoBackend(); toast('تعذّر الاتصال بـ Firebase، المنصة تعمل تجريبيًا', true); }
-  } else api = DemoBackend();
+    try { api = await FirebaseBackend(cfg); console.info('[jwalah] متصل بـ Firebase:', cfg.projectId); }
+    catch (e) { console.error('[jwalah] فشل تحميل Firebase', e); toast('تعذّر الاتصال بالخادم، تأكد من الإنترنت وحدّث الصفحة', true); return; }
+  } else { api = DemoBackend(); console.warn('[jwalah] وضع تجريبي: firebase-config.js فاضي أو غير موجود'); }
   let first = true;
   api.onAuth(u => { me = u; paintNav(); if (first) { first = false; route(); } else route(); });
 })();
