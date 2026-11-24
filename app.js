@@ -10,6 +10,7 @@ const COMMITTEES = [
   { id: 'quality', name: 'لجنة جودة الحياة والتطوير' },
   { id: 'comp',    name: 'لجنة المسابقات والأنشطة الرياضية' },
   { id: 'hr',      name: 'لجنة التقنية والموارد البشرية' },
+  { id: 'media',   name: 'قسم الإعلام والتصميم' },
 ];
 // الهيكل: رئيس النادي + 3 نواب، ولكل لجنة رئيسان ونائبان (طلاب وطالبات معًا)
 const LIMITS = { president: 1, vp: 3, leader: 2, deputy: 2, patrol_leader: 1 };
