@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -34,32 +34,19 @@
 <!-- ============ الرئيسية ============ -->
 <section class="page" data-page="home">
   <div class="hero">
-    <img class="hero-logo" src="assets/img/club-logo-cut.png" alt="جامعة أم القرى — نادي الجوالة">
-    <a class="hero-h" href="https://x.com/jwalah_uqu" target="_blank" rel="noopener">@Jwalah_uqu</a>
-    <p class="hero-s">الجوالة .. شرف الخدمة وروح العطاء <span aria-hidden="true">⚜</span></p>
-  </div>
-  <div class="wrap">
-    <div class="head">
-      <h1>أهلًا بك في منصة نادي الجوالة</h1>
-      <p>مساحة أعضاء النادي: آخر الإعلانات والتغريدات، قادة النادي ولجانه، وطلب الانضمام.</p>
-      <div class="hero-cta" id="heroCta">
-        <a class="btn gold" href="#join">انضم للنادي</a>
-        <a class="btn ghost" href="#about">تعرّف علينا</a>
+    <div class="hero-in">
+      <div class="hero-id">
+        <img class="hero-logo" src="assets/img/club-logo-cut.png" alt="جامعة أم القرى — نادي الجوالة">
+        <h1 class="hero-w" id="welcome">أهلًا وسهلًا بكم في منصة نادي الجوالة</h1>
+        <p class="hero-p">مساحة أعضاء النادي: الإعلانات والتغريدات، الفعاليات، اللجان ونقاطها.</p>
+        <a class="hero-h" href="https://x.com/jwalah_uqu" target="_blank" rel="noopener">@Jwalah_uqu</a>
+        <p class="hero-s">الجوالة .. شرف الخدمة وروح العطاء <span aria-hidden="true">⚜</span></p>
+        <div class="hero-cta" id="heroCta">
+          <a class="btn gold" href="#join">انضم للنادي</a>
+          <a class="btn ghost" href="#about">تعرّف علينا</a>
+        </div>
       </div>
-    </div>
-    <div class="cols">
-      <div class="card pad">
-        <h2>إعلانات النادي</h2>
-        <ul class="ann" id="annHome"></ul>
-        <details class="add" id="annAdd" hidden>
-          <summary>إعلان جديد</summary>
-          <form id="annForm">
-            <label>نص الإعلان<textarea name="text" required maxlength="600"></textarea></label>
-            <button class="btn">نشر الإعلان</button>
-          </form>
-        </details>
-      </div>
-      <div class="card pad tw-card">
+      <div class="tw-card">
         <h2>آخر تغريدات النادي</h2>
         <div class="tw-wrap">
           <div class="tw-track" id="twTrack" tabindex="0" aria-label="تغريدات النادي"></div>
@@ -76,8 +63,22 @@
         </details>
       </div>
     </div>
+  </div>
+  <div class="wrap">
     <div class="stats section" id="statsRow"></div>
-    <div class="card pad"><h2>اللجان: الأعضاء والنقاط</h2><div class="cstats" id="comStats"></div></div>
+    <h2 class="sec-t">لجان النادي</h2>
+    <div class="ccards" id="comStats"></div>
+    <div class="card pad section">
+        <h2>إعلانات النادي</h2>
+        <ul class="ann" id="annHome"></ul>
+        <details class="add" id="annAdd" hidden>
+          <summary>إعلان جديد</summary>
+          <form id="annForm">
+            <label>نص الإعلان<textarea name="text" required maxlength="600"></textarea></label>
+            <button class="btn">نشر الإعلان</button>
+          </form>
+        </details>
+    </div>
   </div>
 </section>
 
@@ -90,24 +91,24 @@
   <div class="narrow story">
     <article class="card">
       <figure><img src="assets/img/group-flags.jpg" alt="جوالة جامعة أم القرى مع راياتهم" loading="lazy"></figure>
-      <div class="body"><h2><span class="n">١</span>تعريف الحركة الكشفية</h2>
+      <div class="body"><h2><span class="n">1</span>تعريف الحركة الكشفية</h2>
       <p>الحركة الكشفية هي حركة تربوية تطوعية غير سياسية، تهدف إلى تنمية الفرد من النواحي الدينية والوطنية والجسدية والعقلية والاجتماعية، من خلال التعلم بالممارسة والعمل الجماعي وخدمة المجتمع وحياة الخلاء.</p></div>
     </article>
     <div class="rope rp"></div>
     <article class="card">
       <figure><img src="assets/img/salute.jpg" alt="جوالة يؤدون التحية الكشفية" loading="lazy"></figure>
-      <div class="body"><h2><span class="n">٢</span>الوعد الكشفي</h2>
+      <div class="body"><h2><span class="n">2</span>الوعد الكشفي</h2>
       <p class="promise">أعد أن أبذل غاية جهدي في أن أقوم بما يجب عليّ نحو الله، ثم الملك والوطن، وأن أساعد الناس في جميع الظروف، وأن أعمل بقانون الكشافة.</p></div>
     </article>
     <div class="rope rp"></div>
     <article class="card">
       <figure><img src="assets/img/volleyball.jpg" alt="أعضاء النادي في نشاط رياضي" loading="lazy"></figure>
-      <div class="body"><h2><span class="n">٣</span>المجالات الكشفية السبعة</h2><ul class="grid" id="fieldsList"></ul></div>
+      <div class="body"><h2><span class="n">3</span>المجالات الكشفية السبعة</h2><ul class="grid" id="fieldsList"></ul></div>
     </article>
     <div class="rope rp"></div>
     <article class="card">
       <figure><img src="assets/img/team-flag.jpg" alt="جوالة جامعة أم القرى مع راية الجامعة ودروع المشاركة" loading="lazy"></figure>
-      <div class="body"><h2><span class="n">٤</span>القانون الكشفي</h2><p class="lead-t">الكشاف:</p><ul class="grid" id="lawList"></ul></div>
+      <div class="body"><h2><span class="n">4</span>القانون الكشفي</h2><p class="lead-t">الكشاف:</p><ul class="grid" id="lawList"></ul></div>
     </article>
   </div>
   <div class="rope rp"></div>
@@ -144,7 +145,7 @@
         <label>عنوان الفعالية<input name="title" required maxlength="80"></label>
         <div class="row2">
           <label>التاريخ<input name="date" type="date" required></label>
-          <label>الوقت <small>اختياري</small><input name="time" maxlength="30" placeholder="٧ مساءً"></label>
+          <label>الوقت <small>اختياري</small><input name="time" maxlength="30" placeholder="7 مساءً"></label>
         </div>
         <div class="row2">
           <label>المكان <small>اختياري</small><input name="place" maxlength="60"></label>
@@ -172,7 +173,7 @@
         <label>الاسم الكامل<input name="name" required maxlength="60" autocomplete="name"></label>
         <div class="row2">
           <label>البريد الإلكتروني<input name="email" type="email" class="ltr" required autocomplete="email"></label>
-          <label>كلمة المرور <small>٦ أحرف على الأقل</small><input name="password" type="password" class="ltr" required minlength="6" autocomplete="new-password"></label>
+          <label>كلمة المرور <small>6 أحرف على الأقل</small><input name="password" type="password" class="ltr" required minlength="6" autocomplete="new-password"></label>
         </div>
         <fieldset class="seg"><legend>أنا</legend>
           <label><input type="radio" name="gender" value="m" required> طالب</label>
@@ -278,8 +279,8 @@
 <section class="page" data-page="admin" hidden>
   <div class="wrap">
     <div class="head"><h1>لوحة الإدارة</h1><p>اعتماد طلبات القادة وإدارة أدوار الأعضاء ولجانهم.</p></div>
-    <div class="card pad"><h2>طلبات بانتظار الاعتماد <span class="badge wait" id="pendN">٠</span></h2><div id="pendBox"></div></div>
-    <div class="card pad section"><h2>كل الأعضاء <span class="badge" id="allN">٠</span></h2>
+    <div class="card pad"><h2>طلبات بانتظار الاعتماد <span class="badge wait" id="pendN">0</span></h2><div id="pendBox"></div></div>
+    <div class="card pad section"><h2>كل الأعضاء <span class="badge" id="allN">0</span></h2>
       <input id="search" placeholder="ابحث بالاسم…" style="margin-bottom:10px">
       <div class="scroll"><table class="tbl"><thead><tr><th>الاسم</th><th>الدور</th><th>اللجنة</th><th>الحالة</th><th></th></tr></thead><tbody id="allBox"></tbody></table></div>
     </div>
@@ -306,7 +307,7 @@
   <symbol id="li" viewBox="0 0 24 24"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11H3v-11Zm6.5 0h3.8v1.5h.06c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1v5.45h-4v-4.83c0-1.15-.02-2.63-1.6-2.63-1.6 0-1.85 1.25-1.85 2.55v4.91h-4v-11Z"/></symbol>
 </svg>
 
-<script src="firebase-config.js?v=7" onerror="window.FIREBASE_CONFIG=null"></script>
-<script src="app.js?v=7"></script>
+<script src="firebase-config.js?v=9" onerror="window.FIREBASE_CONFIG=null"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

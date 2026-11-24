@@ -11,7 +11,7 @@ const COMMITTEES = [
   { id: 'pr',      name: 'لجنة العلاقات العامة' },
   { id: 'media',   name: 'قسم الإعلام والتصميم' },
 ];
-// الهيكل: رئيس النادي + ٣ نواب، ولكل لجنة رئيسان ونائبان (طلاب وطالبات معًا)
+// الهيكل: رئيس النادي + 3 نواب، ولكل لجنة رئيسان ونائبان (طلاب وطالبات معًا)
 const LIMITS = { president: 1, vp: 3, leader: 2, deputy: 2 };
 const COLLEGES = ['كلية الحاسبات', 'كلية الهندسة والعمارة الإسلامية', 'كلية العلوم التطبيقية', 'كلية الطب', 'كلية طب الأسنان', 'كلية الصيدلة', 'كلية العلوم الطبية التطبيقية', 'كلية التمريض', 'كلية الصحة العامة والمعلوماتية الصحية', 'كلية إدارة الأعمال', 'كلية الشريعة والدراسات الإسلامية', 'كلية الدعوة وأصول الدين', 'كلية اللغة العربية وآدابها', 'كلية التربية', 'كلية العلوم الاجتماعية'];
 const ROLES = { president: 'رئيس النادي', vp: 'نائب الرئيس', leader: 'رئيس لجنة', deputy: 'نائب رئيس لجنة', member: 'عضو', beneficiary: 'مستفيد' };
@@ -29,11 +29,11 @@ const ROLE_ORDER = { president: 0, vp: 1, leader: 2, deputy: 3, member: 4, benef
 // ===================== أدوات =====================
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const ar = n => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+const ar = n => String(n);
 const cname = id => COMMITTEES.find(c => c.id === id)?.name || '';
 const initial = n => esc((n || '؟').trim().charAt(0));
-const fmtTime = t => { try { const d = new Date(t); return d.toLocaleDateString('ar-SA-u-ca-gregory', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('ar-SA', { hour: 'numeric', minute: '2-digit' }); } catch { return ''; } };
-const fmtDate = t => { try { return new Date(t).toLocaleDateString('ar-SA', { day: 'numeric', month: 'long' }); } catch { return ''; } };
+const fmtTime = t => { try { const d = new Date(t); return d.toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('ar-SA-u-nu-latn', { hour: 'numeric', minute: '2-digit' }); } catch { return ''; } };
+const fmtDate = t => { try { return new Date(t).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long' }); } catch { return ''; } };
 const isLead = u => !!u && u.approved && LEAD.includes(u.role);
 const isAdmin = u => !!u && u.approved && ADMIN.includes(u.role);
 // فريق تسجيل النقاط: الرئيس ونوابه + رئيسا لجنة الموارد البشرية ونائباها
@@ -69,7 +69,7 @@ function errMsg(e) {
   const map = {
     'auth/email-already-in-use': 'البريد مسجّل مسبقًا، جرّب تسجيل الدخول.',
     'auth/invalid-credential': 'البريد أو كلمة المرور غير صحيحة.', 'auth/wrong-password': 'البريد أو كلمة المرور غير صحيحة.', 'auth/user-not-found': 'البريد أو كلمة المرور غير صحيحة.',
-    'auth/weak-password': 'كلمة المرور ضعيفة، استخدم ٦ أحرف على الأقل.', 'auth/invalid-email': 'صيغة البريد غير صحيحة.',
+    'auth/weak-password': 'كلمة المرور ضعيفة، استخدم 6 أحرف على الأقل.', 'auth/invalid-email': 'صيغة البريد غير صحيحة.',
     'auth/too-many-requests': 'محاولات كثيرة، انتظر قليلًا ثم حاول.', 'permission-denied': 'ما عندك صلاحية لهذا الإجراء.',
   };
   return map[c] || (typeof e === 'string' ? e : 'صار خطأ، حاول مرة ثانية.');
@@ -78,7 +78,7 @@ async function busy(btn, fn) { btn.disabled = true; try { return await fn(); } f
 
 // ===================== طبقة البيانات: تجريبي =====================
 function DemoBackend() {
-  const KEY = 'jwalah-demo-v5', SKEY = 'jwalah-demo-session';
+  const KEY = 'jwalah-demo-v6', SKEY = 'jwalah-demo-session';
   const H123 = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
   const now = Date.now(), day = 864e5;
   const P = (uid, name, role, committee, extra = {}) => ({ uid, name, role, committee, email: uid + '@demo.sa', pw: H123, approved: true, public: role !== 'member', gender: 'm', x: '', linkedin: '', major: '', createdAt: now, ...extra });
@@ -102,8 +102,8 @@ function DemoBackend() {
     ann: [
       { id: 'a1', committee: 'general', text: 'فتح باب التسجيل في معسكرات الخدمة العامة، سجّل من حسابك وتابع لجنتك.', authorUid: 'president', authorName: 'عبدالله الحربي', createdAt: now - day },
       { id: 'a2', committee: 'general', text: 'اجتماع عام لأعضاء النادي يوم الأحد بعد العصر في مقر النادي.', authorUid: 'vp1', authorName: 'فيصل الغامدي', createdAt: now - 3 * day },
-      { id: 'a3', committee: 'quality', text: 'توزيع المناطق على الأعضاء غدًا، الحضور ٨ صباحًا.', authorUid: 'l2', authorName: 'عمر الشهري', createdAt: now - 2 * day },
-      { id: 'a4', committee: 'quality', text: 'اجتماع الطالبات في اللجنة يوم الثلاثاء الساعة ١٠ صباحًا.', authorUid: 'fl2', authorName: 'سارة الغامدي', createdAt: now - day },
+      { id: 'a3', committee: 'quality', text: 'توزيع المناطق على الأعضاء غدًا، الحضور 8 صباحًا.', authorUid: 'l2', authorName: 'عمر الشهري', createdAt: now - 2 * day },
+      { id: 'a4', committee: 'quality', text: 'اجتماع الطالبات في اللجنة يوم الثلاثاء الساعة 10 صباحًا.', authorUid: 'fl2', authorName: 'سارة الغامدي', createdAt: now - day },
     ],
     points: [
       { id: 'p1', committee: 'media', amount: 2, reason: 'تغطية معسكر الخدمة العامة', by: 'عبدالله الحربي', createdAt: now - day },
@@ -112,15 +112,15 @@ function DemoBackend() {
       { id: 'p2', committee: 'quality', amount: 3, reason: 'تنظيم لقاء الطالبات', by: 'عبدالله الحربي', createdAt: now - day },
     ],
     events: [
-      { id: 'e1', title: 'لقاء تعريفي بنادي الجوالة', date: new Date(now + 3 * day).toISOString().slice(0, 10), time: '٧ مساءً', place: 'مقر النادي', audience: 'm', committee: '', desc: 'تعرّف على النادي ولجانه وبرنامج الفصل.', attendees: [], createdAt: now },
-      { id: 'e2', title: 'ورشة الإسعافات الأولية', date: new Date(now + 6 * day).toISOString().slice(0, 10), time: '١٠ صباحًا', place: 'قاعة الأنشطة', audience: 'f', committee: 'quality', desc: '', attendees: [], createdAt: now },
+      { id: 'e1', title: 'لقاء تعريفي بنادي الجوالة', date: new Date(now + 3 * day).toISOString().slice(0, 10), time: '7 مساءً', place: 'مقر النادي', audience: 'm', committee: '', desc: 'تعرّف على النادي ولجانه وبرنامج الفصل.', attendees: [], createdAt: now },
+      { id: 'e2', title: 'ورشة الإسعافات الأولية', date: new Date(now + 6 * day).toISOString().slice(0, 10), time: '10 صباحًا', place: 'قاعة الأنشطة', audience: 'f', committee: 'quality', desc: '', attendees: [], createdAt: now },
     ],
     chat: [
       { id: 'c1', uid: 'president', name: 'عبدالله الحربي', role: 'president', gender: 'm', text: 'حياكم الله في الشات العام لنادي الجوالة 🌿', createdAt: now - 3600e3 },
     ],
     tweets: [
       { id: 't1', url: 'https://x.com/jwalah_uqu', text: 'الجوالة.. شرف الخدمة وروح العطاء 🤍\n#الكشفية_درب_تعلم_لاينتهي', createdAt: now - day },
-      { id: 't2', url: 'https://x.com/jwalah_uqu', text: 'شكرًا لجوالة جامعة أم القرى على مشاركتهم في معسكرات الخدمة العامة حج ١٤٤٧هـ.', createdAt: now - 4 * day },
+      { id: 't2', url: 'https://x.com/jwalah_uqu', text: 'شكرًا لجوالة جامعة أم القرى على مشاركتهم في معسكرات الخدمة العامة حج 1447هـ.', createdAt: now - 4 * day },
     ],
   });
   let mem; try { mem = JSON.parse(localStorage.getItem(KEY)); } catch {}
@@ -166,7 +166,7 @@ function DemoBackend() {
     async points() { return mem.points || []; },
     async addPoints(p) { need(isPointsTeam(me())); (mem.points ||= []).push({ id: 'p' + Date.now(), createdAt: Date.now(), ...p }); save(); },
     async deletePoints(id) { need(isPointsTeam(me())); mem.points = (mem.points || []).filter(p => p.id !== id); save(); },
-    async stats() { const a = mem.users.filter(u => u.approved); const by = {}; COMMITTEES.forEach(c => by[c.id] = a.filter(u => u.committee === c.id && u.role !== 'beneficiary').length); return { members: a.filter(u => u.role !== 'beneficiary').length, beneficiaries: a.filter(u => u.role === 'beneficiary').length, byCommittee: by }; },
+    async stats() { return calcStats(mem.users); },
     async saveStats() {},
     watchChat(cb) { const f = () => cb([...(mem.chat || [])].sort((a, b) => a.createdAt - b.createdAt).slice(-100)); chatCb = f; f(); return () => { chatCb = null; }; },
     async sendChat(m) { const u = me(); need(u && u.approved); (mem.chat ||= []).push({ id: 'c' + Date.now(), createdAt: Date.now(), ...m }); save(); chatCb?.(); },
@@ -202,7 +202,14 @@ async function FirebaseBackend(cfg) {
     onAuth(f) { cb = f; auth.onAuthStateChanged(() => emit().catch(() => cb(null))); },
     async signUp(d) {
       const c = await auth.createUserWithEmailAndPassword(d.email, d.password);
-      await users.doc(c.user.uid).set(d.profile); await emit();
+      await users.doc(c.user.uid).set(d.profile);
+      // العضو والمستفيد يُحسبون فورًا في الأعداد
+      if (d.profile.approved) {
+        const inc = firebase.firestore.FieldValue.increment(1), up = { updatedAt: Date.now() };
+        if (d.profile.role === 'beneficiary') up.beneficiaries = inc; else { up.members = inc; if (d.profile.committee) up['c_' + d.profile.committee] = inc; }
+        try { await fs.collection('stats').doc('club').set(up, { merge: true }); } catch (e) { console.warn('[jwalah] stats', e); }
+      }
+      await emit();
     },
     async signIn(e, p) { await auth.signInWithEmailAndPassword(e, p); },
     async signOut() { await auth.signOut(); },
@@ -260,19 +267,22 @@ function paintNav() {
   $('#navPoints').hidden = !isPointsTeam(me); $('#navChat').hidden = !me?.approved;
   if (me) $('#navName').textContent = (me.name || 'حسابي').split(' ')[0];
   $('#heroCta').hidden = !!me;
+  $('#welcome').textContent = me ? `أهلًا وسهلًا ${(me.name || '').split(' ')[0]} 👋` : 'أهلًا وسهلًا بكم في منصة نادي الجوالة';
   $('#twAdd').hidden = !isLead(me); $('#annAdd').hidden = !isLead(me);
 }
 
 // ===================== الإحصائيات =====================
 // القادة يحسبون الأعداد من قائمة الأعضاء ويحفظونها، والزوار يقرؤونها
+// الأعداد محفوظة في stats/club: تزيد مباشرة مع كل تسجيل، والإدارة تعيد حسابها كاملة عند الاعتماد أو الحذف
 function calcStats(users) {
-  const a = users.filter(u => u.approved), by = {};
-  COMMITTEES.forEach(c => by[c.id] = a.filter(u => u.committee === c.id && u.role !== 'beneficiary').length);
-  return { members: a.filter(u => u.role !== 'beneficiary').length, beneficiaries: a.filter(u => u.role === 'beneficiary').length, byCommittee: by };
+  const a = users.filter(u => u.approved), st = { members: a.filter(u => u.role !== 'beneficiary').length, beneficiaries: a.filter(u => u.role === 'beneficiary').length };
+  COMMITTEES.forEach(c => st['c_' + c.id] = a.filter(u => u.committee === c.id && u.role !== 'beneficiary').length);
+  return st;
 }
+const comCount = (st, id) => st ? (st['c_' + id] ?? 0) : null;
 async function syncStats(users) {
   if (!isLead(me)) return;
-  try { const st = calcStats(users), old = await api.stats(); if (JSON.stringify(old?.byCommittee) !== JSON.stringify(st.byCommittee) || old?.members !== st.members || old?.beneficiaries !== st.beneficiaries) await api.saveStats(st); } catch {}
+  try { const st = calcStats(users), old = await api.stats() || {}; if (Object.keys(st).some(k => old[k] !== st[k])) await api.saveStats(st); } catch {}
 }
 async function renderStats() {
   let st = null;
@@ -289,8 +299,9 @@ async function renderStats() {
   ];
   $('#statsRow').innerHTML = items.map(([l, v]) => `<div class="stat"><b>${typeof v === 'number' ? ar(v) : v}</b><span>${l}</span></div>`).join('');
   const total = id => pts.filter(p => p.committee === id).reduce((s, p) => s + (+p.amount || 0), 0);
-  $('#comStats').innerHTML = COMMITTEES.map(c => ({ ...c, n: st?.byCommittee?.[c.id], p: total(c.id) })).sort((a, b) => b.p - a.p)
-    .map((c, i) => `<a class="cs" href="#committees"><span class="cs-n">${esc(c.name)}</span><span class="cs-v">${c.n == null ? '' : `<b>${ar(c.n)}</b> ${memberWord(c.n)} · `}<b class="g">${ar(c.p)}</b> ${pointWord(c.p)}</span>${i === 0 && c.p > 0 ? '<span class="first sm">الأولى</span>' : ''}</a>`).join('');
+  const ranked = COMMITTEES.map(c => ({ ...c, n: comCount(st, c.id), pts: total(c.id) })).sort((a, b) => b.pts - a.pts);
+  const top = ranked[0]?.pts > 0 ? ranked[0].id : null;
+  $('#comStats').innerHTML = ranked.map((c, i) => comCard(c, i, top, 'a')).join('');
 }
 
 // ===================== الرئيسية =====================
@@ -306,7 +317,7 @@ async function renderTweets() {
   const list = await api.tweets().catch(() => []);
   twCount = list.length;
   const can = isLead(me);
-  const dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light';
+  const dark = false;
   $('#twTrack').innerHTML = list.length ? list.map(t => {
     const id = statusId(t.url), url = postUrl(t.url) || 'https://x.com/jwalah_uqu';
     const fallback = `<div class="who"><img src="assets/img/club-logo.jpg" alt=""><div>نادي الجوالة <span>@jwalah_uqu</span></div></div>
@@ -377,6 +388,15 @@ async function renderLeaders() {
 let openCom = null, comG = 'm';
 const memberWord = n => n === 1 ? 'عضو' : n === 2 ? 'عضوان' : n >= 3 && n <= 10 ? 'أعضاء' : 'عضو';
 const pointWord = n => Math.abs(n) >= 3 && Math.abs(n) <= 10 ? 'نقاط' : 'نقطة';
+function comCard(c, i, top, tag) {
+  const attrs = tag === 'a' ? `href="#committees"` : `type="button" data-open="${c.id}" aria-expanded="${c.id === openCom}"`;
+  return `<${tag} class="card ccard ${c.id === top ? 'top' : ''} ${tag === 'button' && c.id === openCom ? 'open' : ''}" ${attrs}>
+      ${c.id === top ? '<span class="first">الأولى</span>' : ''}
+      <span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2c2.4-.2 4.3 1.3 5 4.3"/></svg></span>
+      <h3>${esc(c.name)}</h3>
+      <div class="cnum">${c.n === null ? '' : `<span><b>${ar(c.n)}</b> ${memberWord(c.n)}</span>`}<span class="p"><b>${ar(c.pts)}</b> ${pointWord(c.pts)}</span></div>
+    </${tag}>`;
+}
 async function renderCommittees() {
   const box = $('#comBox');
   box.innerHTML = '<p class="empty">جارٍ التحميل…</p>';
@@ -386,15 +406,9 @@ async function renderCommittees() {
   if (me?.approved) { try { members = await api.users(); syncStats(members); } catch {} }
   const st = members ? null : await api.stats().catch(() => null);
   const inCom = id => (members || []).filter(u => u.committee === id && u.approved && u.role !== 'beneficiary');
-  const ranked = COMMITTEES.map(c => ({ ...c, pts: total(c.id), n: members ? inCom(c.id).length : (st?.byCommittee?.[c.id] ?? null) })).sort((a, b) => b.pts - a.pts);
+  const ranked = COMMITTEES.map(c => ({ ...c, pts: total(c.id), n: members ? inCom(c.id).length : comCount(st, c.id) })).sort((a, b) => b.pts - a.pts);
   const top = ranked[0]?.pts > 0 ? ranked[0].id : null;
-  let html = `<div class="ccards">${ranked.map((c, i) => `
-    <button type="button" class="card ccard ${c.id === top ? 'top' : ''} ${c.id === openCom ? 'open' : ''}" data-open="${c.id}" aria-expanded="${c.id === openCom}">
-      ${c.id === top ? '<span class="first">الأولى</span>' : `<span class="rank">${ar(i + 1)}</span>`}
-      <span class="cic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="9" r="2.6"/><path d="M15.5 14.2c2.4-.2 4.3 1.3 5 4.3"/></svg></span>
-      <h3>${esc(c.name)}</h3>
-      <div class="cnum">${c.n === null ? '' : `<span><b>${ar(c.n)}</b> ${memberWord(c.n)}</span>`}<span class="p"><b>${ar(c.pts)}</b> ${pointWord(c.pts)}</span></div>
-    </button>`).join('')}</div>`;
+  let html = `<div class="ccards">${ranked.map((c, i) => comCard(c, i, top, 'button')).join('')}</div>`;
 
   if (!me) { box.innerHTML = html + '<div class="card pad section" style="text-align:center"><p>تفاصيل اللجان وأعضاؤها وإعلاناتها لأعضاء النادي.</p><a class="btn" href="#join">سجّل دخولك</a></div>'; return; }
   if (!me.approved) { box.innerHTML = html + '<p class="empty section">طلبك بانتظار اعتماد رئيس النادي، وبعدها تقدر تفتح تفاصيل اللجان.</p>'; return; }
@@ -436,7 +450,7 @@ async function renderEvents() {
     const d = new Date(e.date + 'T00:00'), going = (e.attendees || []).includes(me?.uid), n = (e.attendees || []).length;
     const aud = e.audience === 'm' ? 'للطلاب' : e.audience === 'f' ? 'للطالبات' : 'للجميع';
     const canGo = me?.approved && (e.audience === 'all' || e.audience === (me.gender || 'm')) && e.date >= today;
-    return `<article class="card ev"><div class="ev-d"><b>${ar(d.getDate())}</b><span>${d.toLocaleDateString('ar-SA-u-ca-gregory', { month: 'long' })}</span></div>
+    return `<article class="card ev"><div class="ev-d"><b>${ar(d.getDate())}</b><span>${d.toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long' })}</span></div>
       <div class="ev-b"><h3>${esc(e.title)}</h3><div class="ev-m">${e.time ? `<span>🕒 ${esc(e.time)}</span>` : ''}${e.place ? `<span>📍 ${esc(e.place)}</span>` : ''}<span class="badge">${aud}</span>${e.committee ? `<span class="badge">${esc(cname(e.committee))}</span>` : ''}</div>
       ${e.desc ? `<p>${esc(e.desc)}</p>` : ''}
       <div class="ev-a"><span class="muted" style="font-size:14px">${ar(n)} مسجّل</span>
@@ -539,10 +553,10 @@ function renderAboutOnce() {
   $('#lawList').innerHTML = ['صادق', 'مخلص', 'نافع', 'صديق للجميع', 'مقتصد', 'مبتسم', 'رفيق بالحيوان ومحافظ على الطبيعة', 'مهذب', 'مطيع', 'نظيف في فكره وقوله وعمله ومظهره'].map(li).join('');
   const logos = [
     { img: 'assets/img/club-logo.jpg', t: 'نادي الجوالة — جامعة أم القرى', en: 'UQU Rover Scouts Club', p: 'نادي طلابي في جامعة أم القرى يجمع الطلاب الجوالة، ينظّم البرامج الكشفية والأنشطة التطوعية، ويشارك في معسكرات الخدمة العامة لخدمة ضيوف الرحمن في الحج.', f: ['جامعة أم القرى', 'مكة المكرمة'] },
-    { img: 'assets/logos/sasa.png', t: 'جمعية الكشافة العربية السعودية', en: 'Saudi Arabian Scouts Association', p: 'الجهة الرسمية التي ترسم الخطة العامة للحركة الكشفية في المملكة وتشرف عليها. أُسست بمرسوم ملكي، ومقرها الرياض، ويرأس مجلس إدارتها وزير التعليم. ومن أبرز برامجها معسكرات الخدمة العامة في الحج التي يشارك فيها نادينا.', f: ['تأسست ١٣٨١هـ / ١٩٦١م', 'عضو عالمي منذ ١٩٦٣م'] },
-    { img: 'assets/logos/mop.png', bg: 'scout', t: 'رسل السلام', en: 'Messengers of Peace', p: 'مبادرة عالمية ضمن المنظمة الكشفية العالمية، وُلدت فكرتها من الملك عبدالله بن عبدالعزيز رحمه الله وملك السويد كارل السادس عشر غوستاف، وأُطلقت رسميًا في جدة. تشجّع الكشافين على خدمة مجتمعاتهم ونشر ثقافة السلام، وجدّدت المملكة دعمها لها عام ٢٠٢٥م بصندوق قدره ٥٠ مليون دولار للعقد القادم.', f: ['أُطلقت في جدة ٢٠١١م', 'مبادرة سعودية الأصل'] },
-    { img: 'assets/logos/wosm.png', bg: 'scout', t: 'سكاوت — المنظمة الكشفية العالمية', en: 'SCOUTS · World Organization of the Scout Movement', p: 'المظلة الدولية للحركة الكشفية التي تجمع الجمعيات الكشفية الوطنية حول العالم، ومنها جمعيتنا السعودية. يرمز شعارها بزهرة الزنبق إلى الإرشاد ووجهة البوصلة، ويحيط بها حبل معقود بعقدة الريف رمزًا لوحدة الكشافين وأخوّتهم، ويظهر بصيغة «<bdi dir="ltr">SCOUTS Saudi Arabia</bdi>» لأن جمعيتنا عضو فيها.', f: ['نحو ١٧٦ جمعية وطنية', 'أكثر من ٥٠ مليون كشاف'] },
-    { img: 'assets/img/baden-powell.jpg', photo: true, t: 'مؤسس الحركة: بادن باول', en: 'Lord Robert Baden-Powell', p: 'ضابط بريطاني أسس الحركة الكشفية عام ١٩٠٧م بأول مخيم كشفي في جزيرة براونسي بإنجلترا، ثم ألّف كتاب «الكشافة للفتيان» عام ١٩٠٨م الذي نشر الفكرة في العالم كله.', f: ['١٩٠٧م', 'جزيرة براونسي'] },
+    { img: 'assets/logos/sasa.png', t: 'جمعية الكشافة العربية السعودية', en: 'Saudi Arabian Scouts Association', p: 'الجهة الرسمية التي ترسم الخطة العامة للحركة الكشفية في المملكة وتشرف عليها. أُسست بمرسوم ملكي، ومقرها الرياض، ويرأس مجلس إدارتها وزير التعليم. ومن أبرز برامجها معسكرات الخدمة العامة في الحج التي يشارك فيها نادينا.', f: ['تأسست 1381هـ / 1961م', 'عضو عالمي منذ 1963م'] },
+    { img: 'assets/logos/mop.png', bg: 'scout', t: 'رسل السلام', en: 'Messengers of Peace', p: 'مبادرة عالمية ضمن المنظمة الكشفية العالمية، وُلدت فكرتها من الملك عبدالله بن عبدالعزيز رحمه الله وملك السويد كارل السادس عشر غوستاف، وأُطلقت رسميًا في جدة. تشجّع الكشافين على خدمة مجتمعاتهم ونشر ثقافة السلام، وجدّدت المملكة دعمها لها عام 2025م بصندوق قدره 50 مليون دولار للعقد القادم.', f: ['أُطلقت في جدة 2011م', 'مبادرة سعودية الأصل'] },
+    { img: 'assets/logos/wosm.png', bg: 'scout', t: 'سكاوت — المنظمة الكشفية العالمية', en: 'SCOUTS · World Organization of the Scout Movement', p: 'المظلة الدولية للحركة الكشفية التي تجمع الجمعيات الكشفية الوطنية حول العالم، ومنها جمعيتنا السعودية. يرمز شعارها بزهرة الزنبق إلى الإرشاد ووجهة البوصلة، ويحيط بها حبل معقود بعقدة الريف رمزًا لوحدة الكشافين وأخوّتهم، ويظهر بصيغة «<bdi dir="ltr">SCOUTS Saudi Arabia</bdi>» لأن جمعيتنا عضو فيها.', f: ['نحو 176 جمعية وطنية', 'أكثر من 50 مليون كشاف'] },
+    { img: 'assets/img/baden-powell.jpg', photo: true, t: 'مؤسس الحركة: بادن باول', en: 'Lord Robert Baden-Powell', p: 'ضابط بريطاني أسس الحركة الكشفية عام 1907م بأول مخيم كشفي في جزيرة براونسي بإنجلترا، ثم ألّف كتاب «الكشافة للفتيان» عام 1908م الذي نشر الفكرة في العالم كله.', f: ['1907م', 'جزيرة براونسي'] },
   ];
   $('#logoGrid').innerHTML = logos.map(l => `<div class="card lc"><div class="mark ${l.bg || ''}"${l.photo ? ' style="background:#1a2a1d"' : ''}><img src="${l.img}" alt="${l.t}"${l.photo ? ' style="width:120px;height:120px;border-radius:50%;object-fit:cover;max-width:none;border:3px solid #B08B44"' : ''}><div class="ph"></div></div><h3>${l.t}</h3><div class="en">${l.en}</div><p>${l.p}</p><div class="facts">${l.f.map(x => `<span>${x}</span>`).join('')}</div></div>`).join('');
   $('#logoGrid').querySelectorAll('.mark img').forEach(im => { const miss = () => im.parentElement.classList.add('missing'); im.addEventListener('error', miss); if (im.complete && !im.naturalWidth) miss(); });
@@ -660,7 +674,7 @@ function bind() {
   $('#ptForm').addEventListener('change', e => { if (e.target.name === 'kind') syncKind(); }); syncKind();
   $('#ptForm').onsubmit = e => {
     e.preventDefault(); const f = e.target, amount = parseInt(f.amount.value, 10);
-    if (!amount || Math.abs(amount) > 100) return toast('اكتب عدد نقاط بين ١ و ١٠٠ (أو بالسالب للخصم)', true);
+    if (!amount || Math.abs(amount) > 100) return toast('اكتب عدد نقاط بين 1 و 100 (أو بالسالب للخصم)', true);
     let entry;
     if (f.kind.value === 'member') {
       const u = ptUsers.find(x => x.uid === f.member.value); if (!u) return toast('اختر العضو', true);
