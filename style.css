@@ -308,3 +308,19 @@ footer small{opacity:.75;font-size:13px}
 .brand-t{display:flex;flex-direction:column;line-height:1.25}
 .brand-t b{color:#B08B44;font-size:19px}
 .brand-t small{color:#d9e6e4;font-size:13px;font-weight:500}
+
+/* المتطوعون وأدوار اللجان */
+.chk{display:flex!important;flex-direction:row!important;align-items:center;gap:10px;font-weight:700}
+.chk input{width:20px;height:20px;min-height:0;accent-color:#00676E}
+.roles-f{border:1.5px dashed var(--line);border-radius:14px;padding:12px 14px;margin:0}
+.roles-f legend{font-weight:700;font-size:15px;padding:0 6px}.roles-f legend small{color:var(--muted);font-weight:400}
+.vol{background:var(--soft);border-radius:14px;padding:10px 12px;display:grid;gap:8px}
+.vol-h{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:15px}
+.vol-h b{color:var(--teal)}
+.vbar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}.vbar i{display:block;height:100%;background:#B08B44;border-radius:99px}
+.vol .btn{justify-self:start}
+.vnames summary{cursor:pointer;font-size:14px;color:var(--teal);font-weight:700}.vnames p{margin:6px 0 0;font-size:14px}
+.croles{display:grid;gap:6px}
+.crole{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:10px;font-size:14.5px;padding:6px 10px;border-radius:10px;border:1px solid var(--line)}
+.crole b{color:var(--teal)}
+@media(max-width:600px){.crole{grid-template-columns:minmax(0,1fr)}}

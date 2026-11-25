@@ -85,7 +85,7 @@ async function busy(btn, fn) { btn.disabled = true; try { return await fn(); } f
 
 // ===================== طبقة البيانات: تجريبي =====================
 function DemoBackend() {
-  const KEY = 'jwalah-demo-v8', SKEY = 'jwalah-demo-session';
+  const KEY = 'jwalah-demo-v9', SKEY = 'jwalah-demo-session';
   const H123 = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92';
   const now = Date.now(), day = 864e5;
   const P = (uid, name, role, committee, extra = {}) => ({ uid, name, role, committee, email: uid + '@demo.sa', pw: H123, approved: true, public: role !== 'member', gender: 'm', x: '', linkedin: '', major: '', createdAt: now, ...extra });
@@ -110,7 +110,7 @@ function DemoBackend() {
       { id: 'p3', kind: 'committee', committee: 'comp', amount: 2, reason: 'تنظيم مسابقة', by: 'المثنى وترة', createdAt: now },
     ],
     events: [
-      { id: 'e1', title: 'لقاء تعريفي بنادي الجوالة', date: new Date(now + 3 * day).toISOString().slice(0, 10), time: '7 مساءً', place: 'مقر النادي', audience: 'm', committee: '', desc: 'تعرّف على النادي ولجانه وبرنامج الفصل.', attendees: [], createdAt: now },
+      { id: 'e1', title: 'لقاء تعريفي بنادي الجوالة', date: new Date(now + 3 * day).toISOString().slice(0, 10), time: '7 مساءً', place: 'مقر النادي', audience: 'all', committee: 'pr', desc: 'تعرّف على النادي ولجانه وبرنامج الفصل.', attendees: [], needVol: true, volNeeded: 8, volunteers: ['q1', 'c2'], comRoles: { pr: 'استقبال الضيوف والتنسيق', quality: 'تجهيز الركن والضيافة', media: 'التصوير والتغطية' }, createdAt: now },
       { id: 'e2', title: 'ورشة الإسعافات الأولية', date: new Date(now + 6 * day).toISOString().slice(0, 10), time: '10 صباحًا', place: 'قاعة الأنشطة', audience: 'f', committee: 'quality', desc: '', attendees: [], createdAt: now },
     ],
     chat: [
@@ -170,7 +170,8 @@ function DemoBackend() {
     async sendChat(m) { const u = me(); need(u && u.approved); (mem.chat ||= []).push({ id: 'c' + Date.now(), createdAt: Date.now(), ...m }); save(); chatCb?.(); },
     async deleteChat(id) { mem.chat = (mem.chat || []).filter(c => c.id !== id); save(); chatCb?.(); },
     async events() { return mem.events || []; },
-    async addEvent(e) { need(isLead(me())); (mem.events ||= []).push({ id: 'e' + Date.now(), createdAt: Date.now(), attendees: [], ...e }); save(); },
+    async addEvent(e) { need(isLead(me())); (mem.events ||= []).push({ id: 'e' + Date.now(), createdAt: Date.now(), attendees: [], volunteers: [], ...e }); save(); },
+    async volunteer(id, on) { const m = me(); need(m && m.approved); const e = mem.events.find(x => x.id === id); e.volunteers = (e.volunteers || []).filter(u => u !== m.uid); if (on) { need((e.volunteers.length) < (e.volNeeded || 0)); e.volunteers.push(m.uid); } save(); },
     async deleteEvent(id) { need(isLead(me())); mem.events = mem.events.filter(e => e.id !== id); save(); },
     async attend(id, on) { const m = me(); need(m && m.approved); const e = mem.events.find(x => x.id === id); e.attendees = (e.attendees || []).filter(u => u !== m.uid); if (on) e.attendees.push(m.uid); save(); },
     async tweets() { return [...mem.tweets].sort((a, b) => b.createdAt - a.createdAt); },
@@ -228,7 +229,8 @@ async function FirebaseBackend(cfg) {
     async addPoints(p) { await fs.collection('points').add({ ...p, createdAt: Date.now() }); },
     async deletePoints(id) { await fs.collection('points').doc(id).delete(); },
     async events() { return docs(await fs.collection('events').get()); },
-    async addEvent(e) { await fs.collection('events').add({ ...e, attendees: [], createdAt: Date.now() }); },
+    async addEvent(e) { await fs.collection('events').add({ ...e, attendees: [], volunteers: [], createdAt: Date.now() }); },
+    async volunteer(id, on) { const F = firebase.firestore.FieldValue; await fs.collection('events').doc(id).update({ volunteers: on ? F.arrayUnion(auth.currentUser.uid) : F.arrayRemove(auth.currentUser.uid) }); },
     async deleteEvent(id) { await fs.collection('events').doc(id).delete(); },
     async attend(id, on) { const F = firebase.firestore.FieldValue; await fs.collection('events').doc(id).update({ attendees: on ? F.arrayUnion(auth.currentUser.uid) : F.arrayRemove(auth.currentUser.uid) }); },
     async tweets() { return docs(await twC.get()).sort((a, b) => b.createdAt - a.createdAt); },
@@ -303,7 +305,11 @@ async function renderStats() {
 }
 
 // ===================== الرئيسية =====================
-let twTimer, twIdx = 0, twCount = 0;
+let twTimer, twIdx = 0, twCount = 0, twPaused = false, twResume;
+const TW_EVERY = 6000;
+// التغريدات تتحرك لحالها كل 6 ثواني، وتوقف مؤقتًا لما يكون الماوس عليها أو يتفاعل معها أحد
+function twAuto() { clearInterval(twTimer); if (twCount > 1) twTimer = setInterval(() => { if (!twPaused && !document.hidden && current === 'home') twGo(twIdx + 1); }, TW_EVERY); }
+function twHold(ms) { twPaused = true; clearTimeout(twResume); if (ms) twResume = setTimeout(() => { twPaused = false; }, ms); }
 // تضمين التغريدة الرسمي من X (يعرض الصورة والنص والتفاعل)، ولو ما اشتغل يظهر النص الاحتياطي
 const statusId = u => (String(u || '').match(/\/status\/(\d+)/) || [])[1] || '';
 let twWidgetP;
@@ -333,11 +339,12 @@ async function renderTweets() {
   $('#twDots').innerHTML = list.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('');
   twIdx = 0; clearInterval(twTimer);
   if (list.some(t => statusId(t.url))) loadTwWidgets().then(tw => tw.widgets.load($('#twTrack'))).catch(() => {});
-  if (list.length > 1 && !matchMedia('(prefers-reduced-motion: reduce)').matches) twTimer = setInterval(() => twGo(twIdx + 1), 8000);
+  twPaused = false; twAuto();
 }
 function twGo(i) {
   if (!twCount) return; twIdx = (i + twCount) % twCount;
-  const el = $('#twTrack').children[twIdx]; if (el) $('#twTrack').scrollTo({ left: el.offsetLeft - $('#twTrack').offsetLeft, behavior: 'smooth' });
+  const t = $('#twTrack'), el = t.children[twIdx];
+  if (el) t.scrollTo({ left: el.offsetLeft - t.offsetLeft, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   [...$('#twDots').children].forEach((d, k) => d.classList.toggle('on', k === twIdx));
 }
 function annItem(a, canDel) {
@@ -456,8 +463,26 @@ async function renderEvents() {
   const box = $('#evBox'); box.innerHTML = '<p class="empty">جارٍ التحميل…</p>';
   $('#evAdd').hidden = !isLead(me);
   const list = await api.events().catch(() => []);
+  let people = [];
+  if (isLead(me)) { try { people = await api.users(); } catch {} }
+  const nameOf = uid => people.find(u => u.uid === uid)?.name || '';
   const today = new Date().toISOString().slice(0, 10);
   const up = list.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date)), past = list.filter(e => e.date < today).sort((a, b) => b.date.localeCompare(a.date));
+  // المتطوعون: عدد مطلوب، والعضو يتطوّع بنفسه لين يكتمل العدد
+  const volHtml = e => {
+    if (!e.needVol || !e.volNeeded) return '';
+    const v = e.volunteers || [], n = v.length, full = n >= e.volNeeded, mine = v.includes(me?.uid);
+    const can = me?.approved && me.role !== 'beneficiary' && e.date >= today && (e.audience === 'all' || e.audience === (me.gender || 'm'));
+    const names = isLead(me) && n ? `<details class="vnames"><summary>أسماء المتطوعين</summary><p>${v.map(id => esc(nameOf(id) || 'عضو')).join('، ')}</p></details>` : '';
+    return `<div class="vol"><div class="vol-h"><span>🙋 المتطوعون <b>${n} / ${e.volNeeded}</b></span>${full ? '<span class="badge lead">اكتمل العدد</span>' : `<span class="muted">باقي ${e.volNeeded - n}</span>`}</div>
+      <div class="vbar"><i style="width:${Math.min(100, Math.round(n / e.volNeeded * 100))}%"></i></div>
+      ${can && (mine || !full) ? `<button class="btn sm ${mine ? 'ghost' : ''}" data-vol="${esc(e.id)}" data-on="${mine ? 0 : 1}">${mine ? 'إلغاء التطوّع' : 'أتطوّع'}</button>` : ''}${names}</div>`;
+  };
+  // دور كل لجنة في الفعالية
+  const rolesHtml = e => {
+    const r = e.comRoles || {}, ks = COMMITTEES.filter(c => (r[c.id] || '').trim());
+    return ks.length ? `<div class="croles"><p class="sub-t">أدوار اللجان</p>${ks.map(c => `<div class="crole"><b>${esc(c.name)}</b><span>${esc(r[c.id])}</span></div>`).join('')}</div>` : '';
+  };
   const card = e => {
     const d = new Date(e.date + 'T00:00'), going = (e.attendees || []).includes(me?.uid), n = (e.attendees || []).length;
     const aud = e.audience === 'm' ? 'للطلاب' : e.audience === 'f' ? 'للطالبات' : 'للجميع';
@@ -465,6 +490,8 @@ async function renderEvents() {
     return `<article class="card ev"><div class="ev-d"><b>${ar(d.getDate())}</b><span>${d.toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long' })}</span></div>
       <div class="ev-b"><h3>${esc(e.title)}</h3><div class="ev-m">${e.time ? `<span>🕒 ${esc(e.time)}</span>` : ''}${e.place ? `<span>📍 ${esc(e.place)}</span>` : ''}<span class="badge">${aud}</span>${e.committee ? `<span class="badge">${esc(cname(e.committee))}</span>` : ''}</div>
       ${e.desc ? `<p>${esc(e.desc)}</p>` : ''}
+      ${volHtml(e)}
+      ${rolesHtml(e)}
       <div class="ev-a"><span class="muted" style="font-size:14px">${ar(n)} مسجّل</span>
       ${canGo ? `<button class="btn sm ${going ? 'ghost' : 'gold'}" data-go="${esc(e.id)}" data-on="${going ? 0 : 1}">${going ? 'إلغاء التسجيل' : 'سأحضر'}</button>` : ''}
       ${isLead(me) ? `<button class="btn sm del" data-del-ev="${esc(e.id)}">حذف</button>` : ''}</div></div></article>`;
@@ -656,7 +683,8 @@ function bind() {
     const b = e.target.closest('button'); if (!b) return;
     const d = b.dataset;
     try {
-      if (d.go) { b.disabled = true; await api.attend(d.go, d.on === '1'); renderEvents(); toast(d.on === '1' ? 'تم تسجيل حضورك' : 'تم إلغاء التسجيل'); }
+      if (d.vol) { b.disabled = true; await api.volunteer(d.vol, d.on === '1'); renderEvents(); toast(d.on === '1' ? 'شكرًا لتطوّعك 🙌' : 'تم إلغاء التطوّع'); }
+      else if (d.go) { b.disabled = true; await api.attend(d.go, d.on === '1'); renderEvents(); toast(d.on === '1' ? 'تم تسجيل حضورك' : 'تم إلغاء التسجيل'); }
       else if (d.delEv) { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'متأكد؟'; return; } b.disabled = true; await api.deleteEvent(d.delEv); renderEvents(); toast('تم الحذف'); }
       else if (d.delPt) { if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = 'متأكد؟'; return; } b.disabled = true; await api.deletePoints(d.delPt); renderPoints(); toast('تم حذف القيد'); }
       else if (d.delChat) { b.disabled = true; await api.deleteChat(d.delChat); }
@@ -686,10 +714,15 @@ function bind() {
     sel.onchange = () => { const o = sel.closest('form').querySelector('.colOther'); o.hidden = sel.value !== '__other'; o.querySelector('input').required = sel.value === '__other'; };
   });
   const comOpts = '<option value="">—</option>' + COMMITTEES.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
-  $('#evCom').innerHTML = comOpts; $('#ptCom').innerHTML = COMMITTEES.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  $('#evCom').innerHTML = comOpts;
+  $('#evRoles').innerHTML = COMMITTEES.map(c => `<label>${esc(c.name)}<input name="role_${c.id}" maxlength="200" placeholder="مثال: التنظيم والاستقبال"></label>`).join('');
+  $('#evForm').needVol.onchange = e => { $('#volWrap').hidden = !e.target.checked; $('#evForm').volNeeded.required = e.target.checked; }; $('#ptCom').innerHTML = COMMITTEES.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
   $('#evForm').onsubmit = e => {
     e.preventDefault(); const f = e.target;
-    const ev = { title: f.title.value.trim(), date: f.date.value, time: f.time.value.trim(), place: f.place.value.trim(), audience: f.audience.value, committee: f.committee.value, desc: f.desc.value.trim(), by: me.uid };
+    const needVol = f.needVol.checked, volNeeded = needVol ? parseInt(f.volNeeded.value, 10) || 0 : 0;
+    if (needVol && (volNeeded < 1 || volNeeded > 500)) return toast('اكتب عدد المتطوعين المطلوب (من 1 إلى 500)', true);
+    const comRoles = {}; COMMITTEES.forEach(c => { const v = (f['role_' + c.id]?.value || '').trim(); if (v) comRoles[c.id] = v.slice(0, 200); });
+    const ev = { title: f.title.value.trim(), date: f.date.value, time: f.time.value.trim(), place: f.place.value.trim(), audience: f.audience.value, committee: f.committee.value, desc: f.desc.value.trim(), by: me.uid, needVol, volNeeded, comRoles };
     busy(f.querySelector('.btn'), async () => { try { await api.addEvent(ev); f.reset(); $('#evAdd').open = false; renderEvents(); toast('تمت إضافة الفعالية'); } catch (e2) { toast(errMsg(e2), true); } });
   };
   const syncKind = () => { const m = $('#ptForm').kind.value === 'member'; $('#ptMemberWrap').hidden = !m; $('#ptComWrap').hidden = m; $('#ptMember').required = m; };
@@ -709,11 +742,21 @@ function bind() {
     busy(f.querySelector('.btn'), async () => { try { await api.sendChat({ uid: me.uid, name: me.name, role: me.role, gender: me.gender || 'm', text: text.slice(0, 500) }); f.reset(); $('#chatBox').scrollTop = $('#chatBox').scrollHeight; } catch (e2) { toast(errMsg(e2), true); } });
   };
   $('#chatForm').text.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#chatForm').requestSubmit(); } });
-  $('#twNext').onclick = () => { clearInterval(twTimer); twGo(twIdx + 1); };
-  $('#twPrev').onclick = () => { clearInterval(twTimer); twGo(twIdx - 1); };
+  $('#twNext').onclick = () => { twHold(10000); twGo(twIdx + 1); };
+  $('#twPrev').onclick = () => { twHold(10000); twGo(twIdx - 1); };
   $('#twTrack').addEventListener('keydown', e => { if (e.key === 'ArrowLeft') twGo(twIdx + 1); if (e.key === 'ArrowRight') twGo(twIdx - 1); });
-  $('#twTrack').addEventListener('pointerdown', () => clearInterval(twTimer));
-  $('#twTrack').addEventListener('mouseenter', () => clearInterval(twTimer));
+  const tw = $('#twTrack');
+  tw.addEventListener('pointerdown', () => twHold(10000));
+  tw.addEventListener('mouseenter', () => twHold(0));
+  tw.addEventListener('mouseleave', () => twHold(2500));
+  tw.addEventListener('touchstart', () => twHold(10000), { passive: true });
+  // لو حرّك أحد التغريدات بيده، النقاط تتبع التغريدة الظاهرة
+  let twScrollT; tw.addEventListener('scroll', () => { clearTimeout(twScrollT); twScrollT = setTimeout(() => {
+    const kids = [...tw.children]; if (!kids.length) return;
+    const mid = tw.getBoundingClientRect().left + tw.clientWidth / 2;
+    let best = 0, bd = 1e9; kids.forEach((k, i) => { const r = k.getBoundingClientRect(), d = Math.abs(r.left + r.width / 2 - mid); if (d < bd) { bd = d; best = i; } });
+    twIdx = best; [...$('#twDots').children].forEach((d, k) => d.classList.toggle('on', k === twIdx));
+  }, 120); });
   addEventListener('hashchange', route);
 }
 
