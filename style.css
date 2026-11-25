@@ -296,3 +296,15 @@ footer small{opacity:.75;font-size:13px}
 .patrol{background:var(--soft);border-radius:14px;padding:12px;text-align:center;display:grid;gap:4px;border-bottom:3px solid var(--gold)}
 .patrol b{color:var(--teal);font-size:16px}.patrol span{font-size:15px}
 .av.fl{font-size:34px;font-family:'Segoe UI Symbol','DejaVu Sans',sans-serif}
+
+/* شريط التنقل: داكن دائمًا، الشعار أبيض والكتابة ذهبية */
+.nav{background:#03252F!important;border-bottom-color:#0C6C78}
+.brand{color:#B08B44!important;font-size:19px}
+.brand img{width:auto!important;height:46px!important;background:none!important;border-radius:0!important;object-fit:contain}
+.links a{color:#F4F4F4}
+.links a:hover{background:rgba(255,255,255,.1)}
+.links a.on{background:#00676E;color:#fff}
+.links a.cta{border-color:#B08B44;color:#F5EDE2}
+.brand-t{display:flex;flex-direction:column;line-height:1.25}
+.brand-t b{color:#B08B44;font-size:19px}
+.brand-t small{color:#d9e6e4;font-size:13px;font-weight:500}
